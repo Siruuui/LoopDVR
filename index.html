@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="LoopDVR converts pretrained Transformers into parameter-efficient looped networks for object detection, instance segmentation, and human pose estimation.">
+  <meta name="theme-color" content="#ffffff">
+  <title>LoopDVR — Looped Transformer for Efficient Dense Visual Recognition</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/results.css">
+  <script src="js/app.js" defer></script>
+  <script src="js/method.js" defer></script>
+  <script src="js/results-data.js" defer></script>
+  <script src="js/results.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <nav class="top-nav" aria-label="Page navigation">
+    <div class="nav-inner">
+      <a class="nav-brand" href="#top">LoopDVR</a>
+      <div class="nav-links">
+        <a href="#method">Method</a>
+        <a href="#following-the-loop">Looped Inference</a>
+        <a href="#quantitative-results">Results</a>
+        <a href="#abstract">Abstract</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="masthead" id="top">
+    <div class="logo-frame"><img class="project-logo" src="assets/logo.png" width="2172" height="724" alt="LoopDVR"></div>
+    <h1><span class="sr-only">LoopDVR: </span>Looped Transformer for<br class="title-break"> Efficient Dense Visual Recognition</h1>
+    <div class="title-reserved" aria-hidden="true"></div>
+    <div class="authors" aria-label="Authors">
+      <span>Sirui Liang<sup>1,2</sup></span>
+      <a href="https://xuanlong-yu.github.io/" target="_blank" rel="noopener noreferrer">Xuanlong Yu<sup>2</sup></a>
+      <a href="https://capsule2077.github.io/" target="_blank" rel="noopener noreferrer">Longfei Liu<sup>2</sup></a>
+      <a href="https://vinthony.github.io/academic/" target="_blank" rel="noopener noreferrer">Xiaodong Cun<sup>1,📪</sup></a>
+      <a href="https://xishen0220.github.io/" target="_blank" rel="noopener noreferrer">Xi Shen<sup>2</sup></a>
+    </div>
+    <div class="affiliations"><span><sup>1</sup> <a href="https://gvclab.github.io/" target="_blank" rel="noopener noreferrer">GVC Lab</a>, <a href="https://www.gbu.edu.cn/" target="_blank" rel="noopener noreferrer">Great Bay University</a></span><span><sup>2</sup> <a href="https://github.com/Intellindust-AI-Lab" target="_blank" rel="noopener noreferrer">Intellindust AI Lab</a></span></div>
+    <div class="authors-reserved" aria-hidden="true"></div>
+    <div class="resource-links" aria-label="Project resources">
+      <a class="resource" role="link" aria-disabled="true" title="Link to be added"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 4 12 16M18 4 6 20"/></svg>arXiv</a>
+      <a class="resource" href="https://github.com/Intellindust-AI-Lab/LoopDVR" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18"/></svg>Code</a>
+      <a class="resource" href="#citation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6m-6 4h6"/></svg>BibTeX</a>
+    </div>
+  </header>
+
+  <main id="main-content">
+      <figure class="comparison-figure">
+        <div class="comparison-grid">
+          <figure><button class="figure-zoom" data-zoom="assets/charts/detection.png" data-caption="Object detection · LoopDet" aria-label="Enlarge object detection comparison"><img src="assets/charts/detection.png" width="1786" height="1270" alt="Object detection accuracy versus parameters on COCO: LoopDet at 50.9, 54.0, 56.6, and 57.5 AP."></button><figcaption><span class="task-dot detection"></span>Object detection</figcaption></figure>
+          <figure><button class="figure-zoom" data-zoom="assets/charts/segmentation.png" data-caption="Instance segmentation · LoopSeg" aria-label="Enlarge instance segmentation comparison"><img src="assets/charts/segmentation.png" width="1786" height="1270" alt="Instance segmentation accuracy versus parameters on COCO: LoopSeg at 43.0, 45.5, 48.1, and 48.9 AP."></button><figcaption><span class="task-dot segmentation"></span>Instance segmentation</figcaption></figure>
+          <figure><button class="figure-zoom" data-zoom="assets/charts/pose.png?v=20261112" data-caption="Human pose estimation · LoopPose" aria-label="Enlarge human pose estimation comparison"><img src="assets/charts/pose.png?v=20261112" width="1786" height="1270" alt="Human pose estimation accuracy versus parameters on COCO: LoopPose at 68.2, 71.8, 72.9, and 74.3 AP."></button><figcaption><span class="task-dot pose"></span>Human pose estimation</figcaption></figure>
+        </div>
+        <figcaption class="figure-note">Achieving exceptional parameter efficiency via looped Transformer.</figcaption>
+      </figure>
+    <section class="content-section results-section" id="results" aria-labelledby="results-heading">
+      <h2 id="results-heading">Qualitative results</h2>
+      <div id="case-tabs" class="task-tabs" role="tablist" aria-label="Recognition task">
+        <button id="tab-detection" data-task="detection" data-video="assets/videos/qualitative-detection.mp4" role="tab" aria-selected="false" aria-controls="case-panel" tabindex="-1">Object detection <span>LoopDet-X</span></button>
+        <button id="tab-segmentation" data-task="segmentation" data-video="assets/videos/qualitative-segmentation.mp4" role="tab" aria-selected="true" aria-controls="case-panel">Instance segmentation <span>LoopSeg-X</span></button>
+        <button id="tab-pose" data-task="pose" data-video="assets/videos/qualitative-pose.mp4" role="tab" aria-selected="false" aria-controls="case-panel" tabindex="-1">Human pose estimation <span>LoopPose-X</span></button>
+      </div>
+      <div id="case-panel" role="tabpanel" aria-labelledby="tab-segmentation">
+        <div class="qualitative-player">
+          <button id="qualitative-open" class="figure-zoom" type="button" aria-haspopup="dialog" aria-label="Enlarge instance segmentation video">
+            <video id="qualitative-video" src="assets/videos/qualitative-segmentation.mp4" width="2586" height="1080" preload="metadata" muted playsinline loop aria-label="Instance segmentation video"></video>
+          </button>
+          <p id="qualitative-status" class="media-status" role="status"></p>
+        </div>
+        <div id="case-gallery" class="case-gallery"></div>
+      </div>
+    </section>
+
+    <section class="content-section method-section" id="method" aria-labelledby="method-heading">
+      <h2 id="method-heading">Method</h2>
+      <p class="section-intro">We present LoopDVR, a general framework that transforms pre-trained dense visual recognition models into more parameter-efficient looped networks.</p>
+      <div class="pipeline-player" aria-label="LoopDVR four-part method walkthrough">
+        <div class="stage-narrative">
+          <div class="stage-copy"><h3><span id="stage-number" class="stage-number">1</span><span id="stage-title">Backbone grouping and initialization</span></h3><p id="stage-description">We group contiguous backbone layers using their representation similarity and initialize each shared block from the pretrained weights of its group’s final layer.</p></div>
+        </div>
+        <div class="method-media">
+          <video id="pipeline-video" src="assets/videos/three-stages.mp4" poster="assets/videos/three-stages-poster.webp" width="1920" height="1080" preload="auto" muted playsinline aria-label="Animated overview of LoopDVR grouping, backbone distillation, and dense recognition post-training"></video>
+          <button id="method-overview" class="figure-zoom" data-zoom="assets/figures/method.png" data-caption="LoopDVR framework" aria-label="Enlarge the complete LoopDVR method diagram" hidden><img src="assets/figures/method.png" width="2060" height="934" alt="LoopDVR framework: representation-based grouping and group-end initialization, shared Transformer blocks with Loop Adapters, DINOv3 backbone distillation, and dense recognition post-training."></button>
+        </div>
+        <div class="video-control-row">
+          <button id="method-toggle" class="playback-toggle" type="button" aria-label="Play Method video"><svg data-icon="play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><svg data-icon="pause" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg><svg data-icon="replay" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg></button>
+          <div id="stage-timeline" class="stage-timeline" aria-label="Method diagram sections">
+            <button data-stage="0" class="is-active" aria-current="step" aria-label="Play section 1: Grouping and initialization"><span class="stage-track"><span></span></span><span class="stage-label"><b>01</b><span>Grouping &amp; initialization</span></span></button>
+            <button data-stage="1" aria-label="Play section 2: Looped Transformer block"><span class="stage-track"><span></span></span><span class="stage-label"><b>02</b><span>Looped Transformer block</span></span></button>
+            <button data-stage="2" aria-label="Play section 3: Backbone distillation"><span class="stage-track"><span></span></span><span class="stage-label"><b>03</b><span>Backbone distillation</span></span></button>
+            <button data-stage="3" aria-label="Play section 4: Dense recognition"><span class="stage-track"><span></span></span><span class="stage-label"><b>04</b><span>Dense recognition</span></span></button>
+          </div>
+        </div>
+        <p id="pipeline-status" class="media-status" role="status"></p>
+      </div>
+    </section>
+
+    <section class="content-section attention-section" id="following-the-loop" aria-labelledby="loop-heading">
+      <h2 id="loop-heading">Looped Inference</h2>
+      <p class="section-intro">The visualization tracks backbone attention and instance segmentation predictions as shared Transformer blocks are reused across logical layers.</p>
+      <video id="attention-video" src="assets/videos/loop-attention-v5.mp4" poster="assets/videos/loop-attention-poster-v5.webp" width="1920" height="1080" preload="auto" muted playsinline aria-label="LoopDVR backbone attention and instance segmentation visualization"></video>
+      <div class="video-control-row">
+        <button id="attention-toggle" class="playback-toggle" type="button" aria-label="Play Looped Inference video"><svg data-icon="play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><svg data-icon="pause" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg><svg data-icon="replay" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg></button>
+        <div id="attention-timeline" class="stage-timeline attention-timeline" aria-label="Backbone and decoder stages">
+          <button data-attention-stage="0" aria-label="Play backbone stage"><span class="stage-track"><span></span></span><span class="stage-label"><span>Backbone</span></span></button>
+          <button data-attention-stage="1" aria-label="Play decoder stage"><span class="stage-track"><span></span></span><span class="stage-label"><span>Decoder</span></span></button>
+        </div>
+      </div>
+      <p id="attention-status" class="media-status" role="status"></p>
+    </section>
+
+    <section class="content-section benchmark-section" id="quantitative-results" aria-labelledby="benchmark-heading">
+      <h2 id="benchmark-heading">Results</h2>
+      <div id="benchmark-tabs" class="task-tabs" role="tablist" aria-label="Benchmark task">
+        <button id="benchmark-detection" data-benchmark-task="detection" role="tab" aria-selected="true" aria-controls="benchmark-panel">Object detection</button>
+        <button id="benchmark-segmentation" data-benchmark-task="instance_segmentation" role="tab" aria-selected="false" aria-controls="benchmark-panel" tabindex="-1">Instance segmentation</button>
+        <button id="benchmark-pose" data-benchmark-task="pose" role="tab" aria-selected="false" aria-controls="benchmark-panel" tabindex="-1">Human pose estimation</button>
+      </div>
+      <div id="benchmark-panel" role="tabpanel" aria-labelledby="benchmark-detection">
+        <div class="benchmark-filters" role="group" aria-label="Parameter range in millions">
+          <span class="filter-label">Parameters (M)</span>
+          <div class="parameter-options">
+            <button type="button" data-parameter-range="all" aria-pressed="true">All</button>
+            <button type="button" data-parameter-range="under10" aria-pressed="false" aria-label="0 to under 10 million parameters">0–10</button>
+            <button type="button" data-parameter-range="10to20" aria-pressed="false" aria-label="10 to under 20 million parameters">10–20</button>
+            <button type="button" data-parameter-range="20to30" aria-pressed="false" aria-label="20 to under 30 million parameters">20–30</button>
+            <button type="button" data-parameter-range="30to40" aria-pressed="false" aria-label="30 to 40 million parameters inclusive">30–40</button>
+          </div>
+        </div>
+        <figure class="benchmark-figure" aria-labelledby="benchmark-title">
+          <div class="benchmark-chart-heading"><h3 id="benchmark-title">COCO box AP vs. parameters</h3><span id="benchmark-count" role="status" aria-live="polite"></span></div>
+          <div class="benchmark-plot" id="benchmark-plot">
+            <svg id="benchmark-chart" role="group" aria-labelledby="benchmark-svg-title benchmark-svg-desc"></svg>
+            <div id="benchmark-tooltip" class="benchmark-tooltip" hidden></div>
+          </div>
+          <div class="benchmark-legend" aria-label="Chart legend">
+            <span><i class="legend-loop" aria-hidden="true"></i>LoopDVR</span>
+            <span><i class="legend-baseline" aria-hidden="true"></i>Other models</span>
+          </div>
+        </figure>
+      </div>
+      <noscript><p>Enable JavaScript to explore the interactive results.</p></noscript>
+    </section>
+
+    <section class="abstract-section" id="abstract" aria-labelledby="abstract-heading">
+      <h2 id="abstract-heading">Abstract</h2>
+      <p class="abstract-copy">We propose <strong>LoopDVR</strong>, a framework for converting pretrained Transformer-based dense visual recognition models into parameter-efficient looped networks. Rather than reducing the network’s width or depth directly, LoopDVR shares Transformer blocks across selected layers in both the ViT backbone and query decoder, reducing the number of unique parameters while retaining the original computational structure. However, naively sharing parameters can disrupt the distinct representations and functions learned at different depths. To address this challenge, we use internal representations of the pretrained model to identify suitable sharing groups, initialize shared blocks using the pretrained weights of each group’s terminal layer, and introduce lightweight Loop Adapters to retain depth-specific transformations within shared blocks. We further distill visual representations into the looped backbone, integrate it with a looped query decoder, and train the resulting models for downstream dense recognition tasks. Experiments across four model scales demonstrate that LoopDVR achieves the best accuracy–parameter trade-offs in object detection, instance segmentation, and pose estimation with approximately 28% fewer parameters. Notably, LoopDet-S achieves 50.9 box AP with only 7.0M parameters, highlighting the effectiveness of parameter sharing in compact models.</p>
+
+    </section>
+
+    <section class="empty-section" id="citation" aria-labelledby="citation-heading"><h2 id="citation-heading">Citation</h2>
+      <p> If you find LoopDVR useful for your research, welcome to cite our work using the following BibTeX: </p>
+      <div class="citation-space">
+        <div class="citation-toolbar">
+          <button class="citation-copy" id="copy-bibtex" type="button" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+            <span>Copy BibTeX</span>
+          </button>
+        </div>
+        <pre aria-label="BibTeX citation"><code id="bibtex-entry"></code></pre>
+        <span id="bibtex-copy-status" class="sr-only" role="status"></span>
+      </div>
+    </section>
+    <section class="empty-section" id="acknowledgments" aria-labelledby="acknowledgments-heading"><h2 id="acknowledgments-heading">Acknowledgments</h2><div class="acknowledgments-space">
+      <p>We thank <a href="https://foxcanned.github.io/" target="_blank" rel="noopener noreferrer">Yihao Zhen</a> for valuable feedback and assistance in improving the manuscript, and <a href="https://yunkangtao.github.io/" target="_blank" rel="noopener noreferrer">Yunkang Tao</a> for helpful comments on an earlier draft.</p>
+    </div></section>
+  </main>
+
+  <footer><span>LoopDVR</span><a href="#top">Back to top ↑</a></footer>
+
+  <dialog id="qualitative-viewer" aria-labelledby="qualitative-viewer-title">
+    <div class="viewer-header"><h2 id="qualitative-viewer-title">Qualitative results</h2><button id="qualitative-close" class="close-button" type="button" aria-label="Close video viewer">Close <span aria-hidden="true">×</span></button></div>
+    <div id="qualitative-viewer-tabs" class="task-tabs" role="tablist" aria-label="Video task">
+      <button id="video-tab-detection" type="button" data-video-task="detection" role="tab" aria-selected="false" aria-controls="qualitative-viewer-panel" tabindex="-1">Detection</button>
+      <button id="video-tab-segmentation" type="button" data-video-task="segmentation" role="tab" aria-selected="true" aria-controls="qualitative-viewer-panel">Segmentation</button>
+      <button id="video-tab-pose" type="button" data-video-task="pose" role="tab" aria-selected="false" aria-controls="qualitative-viewer-panel" tabindex="-1">Pose</button>
+    </div>
+    <div id="qualitative-viewer-panel" role="tabpanel" aria-labelledby="video-tab-segmentation">
+      <video id="qualitative-enlarged" width="2586" height="1080" controls playsinline muted></video>
+    </div>
+  </dialog>
+
+  <dialog id="case-viewer" aria-labelledby="viewer-title">
+    <div class="viewer-header"><h2 id="viewer-title">Qualitative results</h2><button id="viewer-close" class="close-button" aria-label="Close image viewer">Close <span aria-hidden="true">×</span></button></div>
+    <div id="viewer-task-tabs" class="task-tabs" role="tablist" aria-label="Compare tasks in this scene"><button data-viewer-task="detection" role="tab" aria-selected="true">Detection</button><button data-viewer-task="segmentation" role="tab" aria-selected="false" tabindex="-1">Segmentation</button><button data-viewer-task="pose" role="tab" aria-selected="false" tabindex="-1">Pose</button></div>
+    <div class="viewer-stage"><button id="viewer-prev" class="round-button" aria-label="Previous scene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><img id="viewer-image" alt=""><button id="viewer-next" class="round-button" aria-label="Next scene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div>
+    <p id="viewer-caption" class="figure-note"></p>
+  </dialog>
+</body>
+</html>

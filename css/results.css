@@ -1,0 +1,57 @@
+.benchmark-section { --result-accent: #d56d82; padding-block: 30px; }
+.benchmark-section > h2 { margin-bottom: 12px; }
+.benchmark-section > .section-intro { margin-bottom: 14px; }
+.benchmark-section .task-tabs { margin: 0 0 12px; }
+.benchmark-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; margin: 0 0 14px; font-size: 12px; }
+.filter-label { color: var(--muted); }
+.parameter-options { display: flex; flex-wrap: wrap; gap: 7px; }
+.parameter-options button { border: 1px solid var(--line); border-radius: 5px; background: #fff; padding: 5px 12px; font-size: 12px; line-height: 1.6; color: var(--muted); }
+.parameter-options button:hover { background: var(--soft); color: var(--blue); }
+.parameter-options button[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: #fff; }
+.benchmark-figure { width: min(100%, var(--media-width)); margin-inline: auto; }
+.benchmark-chart-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 18px; }
+.benchmark-chart-heading h3 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -.015em; }
+#benchmark-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.benchmark-plot { position: relative; margin-top: 8px; }
+#benchmark-chart { width: 100%; display: block; overflow: visible; touch-action: pan-y; }
+.benchmark-grid { stroke: var(--line); stroke-width: 1; }
+.benchmark-axis { stroke: #acb6c2; stroke-width: 1; }
+.benchmark-tick, .benchmark-axis-label { fill: var(--muted); font-size: 12px; }
+.benchmark-axis-label { fill: var(--ink); }
+.benchmark-point { outline: none; cursor: pointer; }
+.benchmark-point .point-marker { stroke: white; stroke-width: 1.3; }
+.benchmark-point .point-halo { fill: none; stroke: currentColor; stroke-width: 1.5; opacity: 0; }
+.benchmark-point:hover .point-halo, .benchmark-point:focus .point-halo, .benchmark-point.is-selected .point-halo { opacity: .75; }
+.benchmark-point[data-group="baseline"] { color: #9aabbd; }
+.benchmark-point[data-group="loopdvr"] { color: var(--result-accent); }
+.benchmark-point, .benchmark-point-label, .benchmark-loop-line { transition: opacity .15s ease; }
+.benchmark-point.is-muted, .benchmark-point-label.is-muted { opacity: .14; }
+.benchmark-point.is-muted:hover, .benchmark-point.is-muted:focus, .benchmark-point.is-selected { opacity: 1; }
+.benchmark-loop-line.is-muted { opacity: .14; }
+.benchmark-loop-line { fill: none; stroke: var(--result-accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.benchmark-point-label { fill: var(--result-accent); font-size: 12px; font-weight: 650; paint-order: stroke; stroke: white; stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
+.benchmark-empty { fill: var(--muted); font-size: 14px; }
+.benchmark-tooltip { position: absolute; z-index: 2; max-width: min(260px, 90%); padding: 10px 13px; border: 1px solid var(--line); border-radius: 5px; box-shadow: 0 5px 18px #12213912; background: rgb(255 255 255 / 98%); pointer-events: none; font-size: 12px; line-height: 1.6; }
+.benchmark-tooltip strong { display: block; color: var(--ink); font-size: 13px; margin-bottom: 3px; }
+.benchmark-tooltip span { display: block; color: var(--muted); }
+.benchmark-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 23px; margin: 6px 0 12px; font-size: 12px; color: var(--muted); }
+.benchmark-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.benchmark-legend i { display: inline-block; width: 9px; height: 9px; margin-right: 2px; }
+.benchmark-legend .legend-loop { background: var(--result-accent); border-radius: 1px; }
+.benchmark-section[data-task="instance_segmentation"] .legend-loop { border-radius: 0; transform: rotate(45deg); }
+.benchmark-section[data-task="pose"] .legend-loop { border-radius: 50%; }
+.benchmark-legend .legend-baseline { background: #9aabbd; border-radius: 50%; }
+@media (max-width: 600px) {
+  .benchmark-section .task-tabs { gap: 16px; }
+  .benchmark-section .task-tabs button { flex: 1; }
+  .benchmark-filters { gap: 8px; margin: 0 0 14px; }
+  .filter-label { width: 100%; }
+  .parameter-options { gap: 5px; }
+  .parameter-options button { font-size: 11px; padding: 5px 10px; }
+  .benchmark-chart-heading h3 { font-size: 15px; }
+  .benchmark-tick, .benchmark-axis-label, .benchmark-point-label { font-size: 11px; }
+  .benchmark-legend { gap: 7px 13px; justify-content: flex-start; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .benchmark-point, .benchmark-point-label, .benchmark-loop-line { transition: none; }
+}
