@@ -6,13 +6,19 @@
 <meta name="theme-color" content="#eeeee7">
 <title>LoopDet · 摄像头检测</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 <main>
-  <header><div><p class="project"><a href="../" aria-label="LoopDVR 项目主页">LoopDVR</a></p><h1>LoopDet<span> / </span>Live</h1></div><div class="spec">LoopDet-S<br>640 × 640 · WebGPU</div></header>
+  <header><div><p class="project"><a href="../" aria-label="LoopDVR 项目主页">LoopDVR</a></p><h1>LoopDet<span> / </span>Live</h1></div><div class="spec">
+    <div>LoopDet-S · WebGPU<span id="precision"></span></div>
+    <div>100 个查询 · 2 次解码细化</div>
+    <select id="model-size" aria-label="检测模式，停止检测后可切换" title="停止检测后可切换模式">
+      <option value="640" selected>标准 · 640 × 640</option>
+      <option value="512">流畅 · 512 × 512</option>
+    </select>
+  </div></header>
   <section class="viewer" aria-label="摄像头检测画面">
-    <video id="source" playsinline muted hidden></video>
     <div class="screen" id="screen" hidden><canvas id="frame"></canvas><canvas id="overlay"></canvas></div>
     <div id="idle"><span class="focus" aria-hidden="true"></span><h2>摄像头检测</h2><p>开启摄像头后，画面将在本机识别。</p></div>
     <span id="lamp" aria-hidden="true"></span>
@@ -26,6 +32,6 @@
   </section>
   <p id="status" role="status">等待开启摄像头</p>
 </main>
-<script type="module" src="camera.js"></script>
+<script type="module" src="camera.js?v=3"></script>
 </body>
 </html>

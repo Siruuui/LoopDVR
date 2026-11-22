@@ -1,15 +1,14 @@
 const el = id => document.getElementById(id);
-const video = el('source');
 const frame = el('frame');
 const overlay = el('overlay');
 const frameCtx = frame.getContext('2d', {alpha: false});
 const ink = overlay.getContext('2d');
 const button = el('toggle');
 const slider = el('threshold');
+const modelSize = el('model-size');
 let active = null;
 let results = [];
 let classes = [];
-let timestamps = [];
 
 function message(text, error = false) {
   el('status').textContent = text;
@@ -19,19 +18,22 @@ function message(text, error = false) {
 function stop(text = '摄像头已关闭', error = false) {
   const run = active;
   active = null;
-  if (run?.callback != null) video.cancelVideoFrameCallback(run.callback);
+  clearInterval(run?.fpsTimer);
+  if (run?.reader) {
+    const reader = run.reader;
+    reader.cancel().catch(() => {}).finally(() => reader.releaseLock());
+  }
   run?.worker?.terminate();
   run?.stream?.getTracks().forEach(track => track.stop());
-  video.pause();
-  video.srcObject = null;
   results = [];
-  timestamps = [];
+  el('precision').textContent = '';
   frameCtx.clearRect(0, 0, frame.width, frame.height);
   ink.clearRect(0, 0, overlay.width, overlay.height);
   el('screen').hidden = true;
   el('idle').hidden = false;
   el('lamp').classList.remove('live');
   for (const id of ['fps','latency','count']) el(id).textContent = '—';
+  modelSize.disabled = false;
   button.textContent = '开启摄像头';
   message(text, error);
 }
@@ -63,65 +65,83 @@ function showBoxes() {
   el('count').textContent = String(visible.length);
 }
 
-function nextFrame(run) {
-  run.callback = video.requestVideoFrameCallback(async () => {
-    run.callback = null;
-    if (active !== run) return;
+async function nextFrame(run) {
+  try {
+    const {done, value: frame} = await run.reader.read();
+    if (active !== run) { frame?.close(); return; }
+    if (done) { stop('摄像头连接已结束'); return; }
     try {
-      const bitmap = await createImageBitmap(video);
-      if (active !== run) { bitmap.close(); return; }
-      run.worker.postMessage({type: 'frame', bitmap}, [bitmap]);
+      run.worker.postMessage({type: 'frame', frame}, [frame]);
     } catch (error) {
-      if (active === run) stop('读取摄像头画面失败：' + error.message, true);
+      frame.close();
+      throw error;
     }
-  });
+  } catch (error) {
+    if (active === run) stop('读取摄像头画面失败：' + error.message, true);
+  }
 }
 
 function receive(run, data) {
-  if (active !== run) { data.bitmap?.close(); return; }
+  if (active !== run) { data.frame?.close(); return; }
   if (data.type === 'error') { stop('检测启动或运行失败：' + data.message, true); return; }
   if (data.type === 'ready') {
+    el('precision').textContent = ' · ' + data.precision.toUpperCase();
     message('正在处理首帧并编译 GPU 着色器…');
     nextFrame(run);
     return;
   }
   if (data.type !== 'frame') return;
-  const {bitmap} = data;
-  if (frame.width !== bitmap.width || frame.height !== bitmap.height) {
-    frame.width = overlay.width = bitmap.width;
-    frame.height = overlay.height = bitmap.height;
+  nextFrame(run);
+  const videoFrame = data.frame;
+  if (frame.width !== videoFrame.displayWidth || frame.height !== videoFrame.displayHeight) {
+    frame.width = overlay.width = videoFrame.displayWidth;
+    frame.height = overlay.height = videoFrame.displayHeight;
   }
-  frameCtx.drawImage(bitmap, 0, 0);
-  bitmap.close();
+  try {
+    frameCtx.drawImage(videoFrame, 0, 0);
+  } catch (error) {
+    stop('显示摄像头画面失败：' + error.message, true);
+    return;
+  } finally {
+    videoFrame.close();
+  }
   results = data.results;
   showBoxes();
   el('screen').hidden = false;
   el('idle').hidden = true;
   el('lamp').classList.add('live');
-  const now = performance.now();
-  timestamps.push(now);
-  if (timestamps.length > 12) timestamps.shift();
-  if (timestamps.length > 1) el('fps').textContent = ((timestamps.length-1)*1000/(now-timestamps[0])).toFixed(1);
   el('latency').textContent = Math.round(data.ms);
-  if (timestamps.length === 1) message('正在检测 · 摄像头画面仅在本机处理');
-  nextFrame(run);
+  if (run.fpsTimer == null) {
+    message('正在检测 · 摄像头画面仅在本机处理');
+    let since = performance.now();
+    run.completed = 0;
+    run.fpsTimer = setInterval(() => {
+      const now = performance.now();
+      el('fps').textContent = (run.completed * 1000 / (now - since)).toFixed(1);
+      since = now;
+      run.completed = 0;
+    }, 1000);
+  } else {
+    run.completed++;
+  }
 }
 
 async function start() {
   const run = {};
   active = run;
+  modelSize.disabled = true;
   button.textContent = '停止检测';
   try {
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) throw new Error('请使用 localhost 或 HTTPS 打开页面。');
-    if (!navigator.gpu || !video.requestVideoFrameCallback) throw new Error('请使用支持 WebGPU 的桌面 Chrome 或 Edge。');
+    if (!navigator.gpu || !window.MediaStreamTrackProcessor) throw new Error('请使用支持 WebGPU 的桌面 Chrome 或 Edge。');
     message('等待摄像头授权…');
     const stream = await navigator.mediaDevices.getUserMedia({audio: false, video: {width: {ideal: 960}, height: {ideal: 540}}});
     if (active !== run) { stream.getTracks().forEach(track => track.stop()); return; }
     run.stream = stream;
-    stream.getVideoTracks()[0].onended = () => { if (active === run) stop('摄像头连接已结束'); };
-    video.srcObject = stream;
-    await video.play();
-    if (active !== run) return;
+    const track = stream.getVideoTracks()[0];
+    if (!track) throw new Error('摄像头未提供视频轨。');
+    track.onended = () => { if (active === run) stop('摄像头连接已结束'); };
+    run.reader = new MediaStreamTrackProcessor({track, maxBufferSize: 1}).readable.getReader();
     message('正在加载 LoopDet-S 和 WebGPU 运行时…');
     if (!classes.length) {
       const response = await fetch('./classes.json');
@@ -129,7 +149,9 @@ async function start() {
       classes = await response.json();
     }
     if (active !== run) return;
-    run.worker = new Worker(new URL('./detector.js', import.meta.url), {type: 'module'});
+    const workerURL = new URL('./detector.js?v=3', import.meta.url);
+    workerURL.searchParams.set('size', modelSize.value);
+    run.worker = new Worker(workerURL, {type: 'module'});
     run.worker.onmessage = ({data}) => receive(run, data);
     run.worker.onerror = event => { if (active === run) stop('推理模块加载失败：' + event.message, true); };
     run.worker.postMessage({type: 'load'});
