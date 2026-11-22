@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#eeeee7">
+<title>LoopDet · 摄像头检测</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header><div><p class="project"><a href="../" aria-label="LoopDVR 项目主页">LoopDVR</a></p><h1>LoopDet<span> / </span>Live</h1></div><div class="spec">LoopDet-S<br>640 × 640 · WebGPU</div></header>
+  <section class="viewer" aria-label="摄像头检测画面">
+    <video id="source" playsinline muted hidden></video>
+    <div class="screen" id="screen" hidden><canvas id="frame"></canvas><canvas id="overlay"></canvas></div>
+    <div id="idle"><span class="focus" aria-hidden="true"></span><h2>摄像头检测</h2><p>开启摄像头后，画面将在本机识别。</p></div>
+    <span id="lamp" aria-hidden="true"></span>
+  </section>
+  <section class="controls" aria-label="检测控制">
+    <button id="toggle" type="button">开启摄像头</button>
+    <label for="threshold">置信度阈值 <output id="level" for="threshold">0.40</output>
+      <input id="threshold" type="range" min="0.05" max="0.95" step="0.01" value="0.40">
+    </label>
+    <dl><div><dt>检测帧率</dt><dd><b id="fps">—</b> FPS</dd></div><div><dt>模型推理</dt><dd><b id="latency">—</b> ms</dd></div><div><dt>当前目标</dt><dd id="count">—</dd></div></dl>
+  </section>
+  <p id="status" role="status">等待开启摄像头</p>
+</main>
+<script type="module" src="camera.js"></script>
+</body>
+</html>
