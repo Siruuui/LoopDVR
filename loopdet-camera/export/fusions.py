@@ -78,7 +78,7 @@ def fuse_rotary(model, nodes, roots, replacements, size):
             )]
 
 
-def fuse_gelu(nodes, replacements, expected_count=26):
+def fuse_gelu(nodes, replacements, expected_count=28):
     erfs = [node for node in nodes.values() if node.op_type == 'Erf']
     require(len(erfs) == expected_count, f'expected {expected_count} GELU activations')
     for erf in erfs:
@@ -107,7 +107,7 @@ def fuse_box_refinement(model, nodes, replacements):
     corners = np.array([[1, 0, 1, 0], [0, 1, 0, 1], [-.5, 0, .5, 0], [0, -.5, 0, .5]], dtype=np.float32)
     constants = {'ref.wh.indices': np.array([2, 3, 2, 3], dtype=np.int64), 'ref.decode': deltas, 'ref.xyxy': corners}
     model.graph.initializer.extend(numpy_helper.from_array(value, name) for name, value in constants.items())
-    for stage in range(2):
+    for stage in range(4):
         root = f'ref.decode.{stage}'
         split = nodes[decoder + ('Split' if stage == 0 else f'Split_{stage}')]
         end = nodes[decoder + f'Concat_{9 + 2 * stage}']
@@ -159,8 +159,8 @@ def fuse_backbone_attention(nodes, roots, replacements):
 def fuse_head_attention(nodes, replacements):
     producers = {value: node for node in nodes.values() for value in node.output}
     roots = [name.rsplit('/', 1)[0] for name in nodes if re.search(r'/self_attn(?:_\d+)?/Softmax$', name)]
-    require(len(roots) == 3 and sum('/encoder/' in name for name in roots) == 1 and
-            sum('/decoder/' in name for name in roots) == 2, 'expected one encoder and two decoder self-attention layers')
+    require(len(roots) == 5 and sum('/encoder/' in name for name in roots) == 1 and
+            sum('/decoder/' in name for name in roots) == 4, 'expected one encoder and four decoder self-attention layers')
     for root in roots:
         def node(name):
             return nodes[f'{root}/{name}']
@@ -185,7 +185,7 @@ def fuse_head_attention(nodes, replacements):
 
 
 def optimize_graph(model: onnx.ModelProto, size: int) -> onnx.ModelProto:
-    """Fuse all twelve backbone steps of the 100-query detector with two decoder updates."""
+    """Fuse all twelve backbone steps of the 100-query detector with four decoder updates."""
     require(size in (512, 640), 'expected a square input of 512 or 640 pixels')
     graph = model.graph
     signature = [(value.name, value.type.tensor_type.elem_type, [d.dim_value for d in value.type.tensor_type.shape.dim])

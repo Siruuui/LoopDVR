@@ -4,11 +4,11 @@ All three tasks use their released S checkpoint, run all 12 backbone steps and c
 
 | Task | Encoder proposals | Decoder route | Outputs |
 |---|---:|---|---|
-| LoopDet-S | 100 | G0 → G0 | Normalized xyxy boxes, scores, contiguous COCO class indices |
+| LoopDet-S | 100 | G0 → G0 → G1 → G1 | Normalized xyxy boxes, scores, contiguous COCO class indices |
 | LoopPose-S | 24 at 512, 60 at 640 | G0 → G0 → G1 → G1 | Person scores and 17 normalized COCO keypoints per person |
 | LoopSeg-S | 100 at 512, 300 at 640 | G0 → G0 → G1 → G1 | Normalized boxes, scores, classes and per-instance mask logits |
 
-G0 and G1 denote two distinct trained decoder blocks within each task. Each step also uses its own adapter. The detection webcam model exits after G0's second application, using that group's classification and localization-quality heads and the current refined boxes. The full detection release uses 300 queries and four steps.
+G0 and G1 denote two distinct trained decoder blocks within each task. Each step uses its own adapter. At both input sizes the detection web model runs the complete four-step decoder and uses G1's classification and localization-quality heads at the final step. It takes the top 100 encoder proposals. The original detection release takes 300.
 
 At 512, the pose graph takes the top 24 encoder proposals together with the corresponding 24 learned rank embeddings. At 640, it takes the full 60. Both sizes use the release query/class ranking rule, filter to the COCO person category, sort by person score and pad unused rows with zero scores. The 17 keypoints are in COCO order. Their bounding rectangle anchors the on-screen label. The model supplies one score per person.
 

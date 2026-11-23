@@ -27,6 +27,7 @@ async function load() {
   ort.env.wasm.wasmPaths = new URL('./runtime/', import.meta.url).href;
   const precision = adapter.features.has('shader-f16') ? 'fp16' : 'fp32';
   const model = new URL(`./loop${task}-s-${size}-${precision}.onnx`, import.meta.url);
+  if (task === 'det') model.searchParams.set('v', 'd4');
   session = await ort.InferenceSession.create(model.href, {
     executionProviders: ['webgpu', 'wasm'],
     graphOptimizationLevel: 'all',

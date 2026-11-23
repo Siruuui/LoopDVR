@@ -155,7 +155,7 @@ async function start() {
       classes = await response.json();
     }
     if (active !== run) return;
-    const workerURL = new URL('./detector.js?v=5', import.meta.url);
+    const workerURL = new URL('./detector.js?v=6', import.meta.url);
     workerURL.searchParams.set('size', modelSize.value);
     workerURL.searchParams.set('task', run.task);
     run.worker = new Worker(workerURL, {type: 'module'});

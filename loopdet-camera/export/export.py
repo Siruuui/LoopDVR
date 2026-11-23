@@ -42,8 +42,6 @@ def trace_release(repo, weights, size, destination):
     if route != (0, 0, 1, 1):
         raise ValueError('Expected two groups of two supervised decoder refinements')
     decoder.num_queries = 100
-    # The release forward selects box, score and quality predictions for this exit's group.
-    decoder.decoder.layer_to_group = route[:2]
 
     class DetectionExport(torch.nn.Module):
         def __init__(self, model):
