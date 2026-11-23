@@ -1,4 +1,4 @@
-"""Fuse the fixed-shape LoopDet-S inference graph for ONNX Runtime WebGPU."""
+"""Fuse fixed-shape LoopDVR graphs for ONNX Runtime WebGPU."""
 
 from copy import deepcopy
 import math
@@ -16,7 +16,7 @@ BACKBONE_ATTENTION = re.compile(r'/model/looped_vit/blocks\.\d+/attn(?:_\d+)?/So
 
 def require(condition, detail):
     if not condition:
-        raise ValueError(f'Unsupported LoopDet-S graph: {detail}')
+        raise ValueError(f'Unsupported LoopDVR graph: {detail}')
 
 
 def prune(graph):
@@ -78,9 +78,9 @@ def fuse_rotary(model, nodes, roots, replacements, size):
             )]
 
 
-def fuse_gelu(nodes, replacements):
+def fuse_gelu(nodes, replacements, expected_count=26):
     erfs = [node for node in nodes.values() if node.op_type == 'Erf']
-    require(len(erfs) == 26, 'expected 24 backbone and two decoder GELU activations')
+    require(len(erfs) == expected_count, f'expected {expected_count} GELU activations')
     for erf in erfs:
         root = erf.name.rsplit('/', 1)[0]
         div, add, mul, end = [nodes[f'{root}/{name}'] for name in ('Div', 'Add', 'Mul', 'Mul_1')]

@@ -1,3 +1,5 @@
+import {drawPose, instanceColor} from './overlays.js?v=4';
+
 const el = id => document.getElementById(id);
 const frame = el('frame');
 const overlay = el('overlay');
@@ -6,8 +8,9 @@ const ink = overlay.getContext('2d');
 const button = el('toggle');
 const slider = el('threshold');
 const modelSize = el('model-size');
+const task = el('task');
+const modelNames = {det: 'LoopDet-S', pose: 'LoopPose-S', seg: 'LoopSeg-S'};
 let active = null;
-let results = [];
 let classes = [];
 
 function message(text, error = false) {
@@ -25,7 +28,6 @@ function stop(text = '摄像头已关闭', error = false) {
   }
   run?.worker?.terminate();
   run?.stream?.getTracks().forEach(track => track.stop());
-  results = [];
   el('precision').textContent = '';
   frameCtx.clearRect(0, 0, frame.width, frame.height);
   ink.clearRect(0, 0, overlay.width, overlay.height);
@@ -33,25 +35,29 @@ function stop(text = '摄像头已关闭', error = false) {
   el('idle').hidden = false;
   el('lamp').classList.remove('live');
   for (const id of ['fps','latency','count']) el(id).textContent = '—';
-  modelSize.disabled = false;
+  task.disabled = modelSize.disabled = false;
   button.textContent = '开启摄像头';
   message(text, error);
 }
 
-function showBoxes() {
+function drawPredictions(mode, results, maskOverlay) {
   const {width: w, height: h} = overlay;
-  const threshold = Number(slider.value);
-  const visible = results.filter(r => r.score >= threshold);
   ink.clearRect(0, 0, w, h);
+  if (maskOverlay) ink.drawImage(maskOverlay, 0, 0, w, h);
   const unit = Math.max(1, Math.min(w, h) / 500);
   ink.font = '600 ' + Math.round(14 * unit) + 'px system-ui, sans-serif';
   ink.textBaseline = 'middle';
   ink.lineWidth = 2 * unit;
-  for (const {box, score, label} of visible) {
+  for (const [rank, result] of results.entries()) {
+    const {box, score, label} = result;
     const [x, y, right, bottom] = box.map((n, i) => Math.max(0, Math.min(1, n)) * (i % 2 ? h : w));
-    const color = 'hsl(' + ((label * 47 + 83) % 360) + ' 92% 70%)';
-    ink.strokeStyle = color;
-    ink.strokeRect(x, y, right - x, bottom - y);
+    const color = mode === 'seg' ? instanceColor(rank) : 'hsl(' + ((label * 47 + 83) % 360) + ' 92% 70%)';
+    if (mode === 'pose') {
+      drawPose(ink, result, w, h, unit);
+    } else {
+      ink.strokeStyle = color;
+      ink.strokeRect(x, y, right - x, bottom - y);
+    }
     const text = classes[label] + ' ' + Math.round(score * 100) + '%';
     const tagW = ink.measureText(text).width + 10 * unit;
     const tagH = 20 * unit;
@@ -62,7 +68,7 @@ function showBoxes() {
     ink.fillStyle = '#101a14';
     ink.fillText(text, tagX + 5 * unit, tagY + tagH / 2);
   }
-  el('count').textContent = String(visible.length);
+  el('count').textContent = String(results.length);
 }
 
 async function nextFrame(run) {
@@ -71,7 +77,7 @@ async function nextFrame(run) {
     if (active !== run) { frame?.close(); return; }
     if (done) { stop('摄像头连接已结束'); return; }
     try {
-      run.worker.postMessage({type: 'frame', frame}, [frame]);
+      run.worker.postMessage({type: 'frame', frame, threshold: Number(slider.value)}, [frame]);
     } catch (error) {
       frame.close();
       throw error;
@@ -82,7 +88,7 @@ async function nextFrame(run) {
 }
 
 function receive(run, data) {
-  if (active !== run) { data.frame?.close(); return; }
+  if (active !== run) { data.frame?.close(); data.maskOverlay?.close(); return; }
   if (data.type === 'error') { stop('检测启动或运行失败：' + data.message, true); return; }
   if (data.type === 'ready') {
     el('precision').textContent = ' · ' + data.precision.toUpperCase();
@@ -99,20 +105,20 @@ function receive(run, data) {
   }
   try {
     frameCtx.drawImage(videoFrame, 0, 0);
+    drawPredictions(run.task, data.results, data.maskOverlay);
   } catch (error) {
     stop('显示摄像头画面失败：' + error.message, true);
     return;
   } finally {
     videoFrame.close();
+    data.maskOverlay?.close();
   }
-  results = data.results;
-  showBoxes();
   el('screen').hidden = false;
   el('idle').hidden = true;
   el('lamp').classList.add('live');
   el('latency').textContent = Math.round(data.ms);
   if (run.fpsTimer == null) {
-    message('正在检测 · 摄像头画面仅在本机处理');
+    message('摄像头画面仅在本机处理 · 停止后可切换任务和输入尺寸');
     let since = performance.now();
     run.completed = 0;
     run.fpsTimer = setInterval(() => {
@@ -127,10 +133,10 @@ function receive(run, data) {
 }
 
 async function start() {
-  const run = {};
+  const run = {task: task.value};
   active = run;
-  modelSize.disabled = true;
-  button.textContent = '停止检测';
+  task.disabled = modelSize.disabled = true;
+  button.textContent = '关闭摄像头';
   try {
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) throw new Error('请使用 localhost 或 HTTPS 打开页面。');
     if (!navigator.gpu || !window.MediaStreamTrackProcessor) throw new Error('请使用支持 WebGPU 的桌面 Chrome 或 Edge。');
@@ -142,15 +148,16 @@ async function start() {
     if (!track) throw new Error('摄像头未提供视频轨。');
     track.onended = () => { if (active === run) stop('摄像头连接已结束'); };
     run.reader = new MediaStreamTrackProcessor({track, maxBufferSize: 1}).readable.getReader();
-    message('正在加载 LoopDet-S 和 WebGPU 运行时…');
+    message('正在加载 ' + modelNames[run.task] + ' 和 WebGPU 运行时…');
     if (!classes.length) {
       const response = await fetch('./classes.json');
       if (!response.ok) throw new Error('类别表加载失败');
       classes = await response.json();
     }
     if (active !== run) return;
-    const workerURL = new URL('./detector.js?v=3', import.meta.url);
+    const workerURL = new URL('./detector.js?v=4', import.meta.url);
     workerURL.searchParams.set('size', modelSize.value);
+    workerURL.searchParams.set('task', run.task);
     run.worker = new Worker(workerURL, {type: 'module'});
     run.worker.onmessage = ({data}) => receive(run, data);
     run.worker.onerror = event => { if (active === run) stop('推理模块加载失败：' + event.message, true); };
@@ -164,8 +171,12 @@ async function start() {
 
 slider.oninput = () => {
   el('level').textContent = Number(slider.value).toFixed(2);
-  if (!el('screen').hidden) showBoxes();
 };
+task.onchange = () => {
+  el('model-name').textContent = modelNames[task.value];
+  el('task-title').textContent = task.selectedOptions[0].textContent;
+};
+task.onchange();
 button.onclick = () => active ? stop() : start();
 window.addEventListener('pagehide', () => stop());
 document.addEventListener('visibilitychange', () => { if (document.hidden && active) stop('页面已转入后台，摄像头已关闭'); });
