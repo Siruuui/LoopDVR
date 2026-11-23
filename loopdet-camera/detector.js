@@ -1,11 +1,11 @@
 import * as ort from './runtime/ort.webgpu.min.mjs';
-import {createMaskRenderer} from './overlays.js?v=5';
+import {createMaskRenderer} from './overlays.js';
 
 const params = new URL(import.meta.url).searchParams;
 const size = Number(params.get('size') ?? 512);
 const task = params.get('task') ?? 'det';
-if (![640, 512].includes(size)) throw new Error('不支持的模型输入尺寸');
-if (!['det', 'pose', 'seg'].includes(task)) throw new Error('不支持的模型任务');
+if (![640, 512].includes(size)) throw new Error('Unsupported model input size.');
+if (!['det', 'pose', 'seg'].includes(task)) throw new Error('Unsupported recognition task.');
 const area = size * size;
 const canvas = new OffscreenCanvas(size, size);
 const ctx = canvas.getContext('2d', {willReadFrequently: true});
@@ -21,7 +21,7 @@ let maskRenderer;
 async function load() {
   const adapter = await navigator.gpu?.requestAdapter();
   if (!adapter) {
-    throw new Error('WebGPU 无法使用，请在开启硬件加速的桌面 Chrome 或 Edge 中打开。');
+    throw new Error('WebGPU is unavailable. Use desktop Chrome or Edge with graphics acceleration enabled.');
   }
   ort.env.wasm.numThreads = 1;
   ort.env.wasm.wasmPaths = new URL('./runtime/', import.meta.url).href;

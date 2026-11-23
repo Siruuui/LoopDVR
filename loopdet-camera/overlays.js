@@ -1,7 +1,7 @@
 // COCO's 19 limbs, grouped using the LoopDVR visualization's left, right and center colors.
 const skeleton = [
   ['#ff8c00', [[15, 13], [13, 11], [5, 11], [5, 7], [7, 9], [0, 1], [1, 3], [3, 5]]],
-  ['#009dff', [[16, 14], [14, 12], [6, 12], [6, 8], [8, 10], [0, 2], [2, 4], [4, 6]]],
+  ['#776bff', [[16, 14], [14, 12], [6, 12], [6, 8], [8, 10], [0, 2], [2, 4], [4, 6]]],
   ['#b62cff', [[11, 12], [5, 6], [1, 2]]],
 ];
 
@@ -109,7 +109,7 @@ struct Frame {
 export function createMaskRenderer(device) {
   const canvas = new OffscreenCanvas(1, 1);
   const context = canvas.getContext('webgpu');
-  if (!context) throw new Error('无法创建分割掩码的 WebGPU 画布。');
+  if (!context) throw new Error('Could not initialize the segmentation canvas.');
   const format = navigator.gpu.getPreferredCanvasFormat();
   context.configure({device, format, alphaMode: 'premultiplied'});
   const module = device.createShaderModule({code: maskShader});
@@ -125,13 +125,13 @@ export function createMaskRenderer(device) {
     draw(maskBuffer, side, visibleResults, width, height) {
       if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0 ||
           width > device.limits.maxTextureDimension2D || height > device.limits.maxTextureDimension2D) {
-        throw new Error('视频尺寸超出了 GPU 画布支持的范围。');
+        throw new Error('Video dimensions exceed the GPU texture limit.');
       }
       const count = visibleResults.length;
       const bytes = count * side * side * 4;
       if (count && (!Number.isInteger(side) || side < 1 || !maskBuffer ||
           bytes > maskBuffer.size || bytes > device.limits.maxStorageBufferBindingSize)) {
-        throw new Error('分割掩码尺寸与模型输出不符。');
+        throw new Error('The mask dimensions do not match the model output.');
       }
       if (canvas.width !== width) canvas.width = width;
       if (canvas.height !== height) canvas.height = height;

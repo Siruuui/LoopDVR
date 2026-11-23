@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#ffffff">
   <title>LoopDVR — Looped Transformer for Efficient Dense Visual Recognition</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" sizes="any">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=wordmark-2">
   <link rel="stylesheet" href="css/results.css">
   <script src="js/app.js" defer></script>
   <script src="js/method.js" defer></script>
@@ -18,7 +18,11 @@
   <a class="skip-link" href="#main-content">Skip to content</a>
   <nav class="top-nav" aria-label="Page navigation">
     <div class="nav-inner">
-      <a class="nav-brand" href="#top">LoopDVR</a>
+      <div class="institution-logos">
+        <a href="https://gvclab.github.io/" target="_blank" rel="noopener noreferrer"><img src="assets/institutions/gvc-lab.png" width="4186" height="473" alt="GVC Lab, Great Bay University"></a>
+        <span aria-hidden="true">×</span>
+        <a href="https://github.com/Intellindust-AI-Lab" target="_blank" rel="noopener noreferrer"><img src="assets/institutions/intellindust.png" class="intellindust-logo" width="208" height="72" alt="Intellindust AI Lab"></a>
+      </div>
       <div class="nav-links">
         <a href="#method">Method</a>
         <a href="#following-the-loop">Looped Inference</a>
@@ -29,11 +33,9 @@
   </nav>
 
   <header class="masthead" id="top">
-    <div class="logo-frame"><img class="project-logo" src="assets/logo.png" width="2172" height="724" alt="LoopDVR"></div>
-    <h1><span class="sr-only">LoopDVR: </span>Looped Transformer for<br class="title-break"> Efficient Dense Visual Recognition</h1>
-    <div class="title-reserved" aria-hidden="true"></div>
+    <h1><span class="title-lead"><span class="title-logo"><img src="assets/logo.png?v=cropped" width="1683" height="379" alt="LoopDVR"></span>Looped Transformer for</span> Efficient Dense Visual Recognition</h1>
     <div class="authors" aria-label="Authors">
-      <span>Sirui Liang<sup>1,2</sup></span>
+      <a href="https://siruuui.github.io/" target="_blank" rel="noopener noreferrer">Sirui Liang<sup>1,2</sup></a>
       <a href="https://xuanlong-yu.github.io/" target="_blank" rel="noopener noreferrer">Xuanlong Yu<sup>2</sup></a>
       <a href="https://capsule2077.github.io/" target="_blank" rel="noopener noreferrer">Longfei Liu<sup>2</sup></a>
       <a href="https://vinthony.github.io/academic/" target="_blank" rel="noopener noreferrer">Xiaodong Cun<sup>1,📪</sup></a>
@@ -44,7 +46,6 @@
     <div class="resource-links" aria-label="Project resources">
       <a class="resource" role="link" aria-disabled="true" title="Link to be added"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 4 12 16M18 4 6 20"/></svg>arXiv</a>
       <a class="resource" href="https://github.com/Intellindust-AI-Lab/LoopDVR" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18"/></svg>Code</a>
-      <a class="resource" href="./loopdet-camera/"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 6-3v10l-6-3z"/></svg>Webcam Demo</a>
       <a class="resource" href="#citation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6m-6 4h6"/></svg>BibTeX</a>
     </div>
   </header>
@@ -58,18 +59,26 @@
         </div>
         <figcaption class="figure-note">Achieving exceptional parameter efficiency via looped Transformer.</figcaption>
       </figure>
+      <a class="demo-entry" id="browser-demo" href="./loopdet-camera/" target="_blank" rel="noopener noreferrer">
+        <strong><span aria-hidden="true">🖥️</span>&nbsp;Try LoopDVR in your browser!</strong>
+        <span class="demo-action">Open demo <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></span>
+      </a>
     <section class="content-section results-section" id="results" aria-labelledby="results-heading">
       <h2 id="results-heading">Qualitative results</h2>
       <div id="case-tabs" class="task-tabs" role="tablist" aria-label="Recognition task">
-        <button id="tab-detection" data-task="detection" data-video="assets/videos/qualitative-detection.mp4" role="tab" aria-selected="false" aria-controls="case-panel" tabindex="-1">Object detection <span>LoopDet-X</span></button>
-        <button id="tab-segmentation" data-task="segmentation" data-video="assets/videos/qualitative-segmentation.mp4" role="tab" aria-selected="true" aria-controls="case-panel">Instance segmentation <span>LoopSeg-X</span></button>
-        <button id="tab-pose" data-task="pose" data-video="assets/videos/qualitative-pose.mp4" role="tab" aria-selected="false" aria-controls="case-panel" tabindex="-1">Human pose estimation <span>LoopPose-X</span></button>
+        <button id="tab-detection" data-task="detection" role="tab" aria-selected="false" aria-controls="case-panel" tabindex="-1">Object detection <span>LoopDet-X</span></button>
+        <button id="tab-segmentation" data-task="segmentation" role="tab" aria-selected="true" aria-controls="case-panel">Instance segmentation <span>LoopSeg-X</span></button>
+        <button id="tab-pose" data-task="pose" role="tab" aria-selected="false" aria-controls="case-panel" tabindex="-1">Human pose estimation <span>LoopPose-X</span></button>
       </div>
       <div id="case-panel" role="tabpanel" aria-labelledby="tab-segmentation">
         <div class="qualitative-player">
-          <button id="qualitative-open" class="figure-zoom" type="button" aria-haspopup="dialog" aria-label="Enlarge instance segmentation video">
-            <video id="qualitative-video" src="assets/videos/qualitative-segmentation.mp4" width="2586" height="1080" preload="metadata" muted playsinline loop aria-label="Instance segmentation video"></video>
-          </button>
+          <div class="qualitative-frame">
+            <button id="qualitative-open" class="figure-zoom" type="button" aria-haspopup="dialog" aria-label="Enlarge instance segmentation video">
+              <video id="qualitative-video" src="assets/videos/qualitative-segmentation-2.mp4" width="1722" height="720" preload="metadata" muted playsinline loop aria-label="Instance segmentation video"></video>
+            </button>
+            <button class="clip-arrow" type="button" data-clip-step="-1" aria-label="Previous video" aria-controls="qualitative-video"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></button>
+            <button class="clip-arrow" type="button" data-clip-step="1" aria-label="Next video" aria-controls="qualitative-video"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+          </div>
           <p id="qualitative-status" class="media-status" role="status"></p>
         </div>
         <div id="case-gallery" class="case-gallery"></div>
@@ -180,8 +189,10 @@
       <button id="video-tab-segmentation" type="button" data-video-task="segmentation" role="tab" aria-selected="true" aria-controls="qualitative-viewer-panel">Segmentation</button>
       <button id="video-tab-pose" type="button" data-video-task="pose" role="tab" aria-selected="false" aria-controls="qualitative-viewer-panel" tabindex="-1">Pose</button>
     </div>
-    <div id="qualitative-viewer-panel" role="tabpanel" aria-labelledby="video-tab-segmentation">
-      <video id="qualitative-enlarged" width="2586" height="1080" controls playsinline muted></video>
+    <div id="qualitative-viewer-panel" class="qualitative-frame" role="tabpanel" aria-labelledby="video-tab-segmentation">
+      <video id="qualitative-enlarged" width="1722" height="720" controls playsinline muted></video>
+      <button class="clip-arrow" type="button" data-clip-step="-1" aria-label="Previous video" aria-controls="qualitative-enlarged"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></button>
+      <button class="clip-arrow" type="button" data-clip-step="1" aria-label="Next video" aria-controls="qualitative-enlarged"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
     </div>
   </dialog>
 

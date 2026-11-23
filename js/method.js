@@ -105,8 +105,8 @@
       syncControl();
     }
 
-    function changeSource(source) {
-      pendingSeek = finished ? Infinity : pendingSeek ?? video.currentTime;
+    function changeSource(source, time) {
+      pendingSeek = time;
       suspend();
       status.textContent = '';
       video.src = source;
@@ -227,6 +227,7 @@
 
   const qualitativeVideo = document.querySelector('#qualitative-video');
   const qualitativeOpen = document.querySelector('#qualitative-open');
+  const qualitativeFrame = qualitativeOpen.closest('.qualitative-frame');
   const qualitativeViewer = document.querySelector('#qualitative-viewer');
   const enlargedVideo = document.querySelector('#qualitative-enlarged');
   const enlargedTitle = document.querySelector('#qualitative-viewer-title');
@@ -250,23 +251,27 @@
     });
   }
 
-  document.querySelector('#case-panel').addEventListener('qualitative-taskchange', event => {
-    const { source, name } = event.detail;
+  document.querySelector('#case-panel').addEventListener('qualitative-videochange', event => {
+    const { source, name, restart } = event.detail;
+    let time = qualitativePlayer.position();
+    if (qualitativeViewer.open) {
+      time = enlargedVideo.readyState >= HTMLMediaElement.HAVE_METADATA ? enlargedVideo.currentTime : enlargedStart;
+    }
+    if (restart) time = 0;
     qualitativeVideo.setAttribute('aria-label', `${name} video`);
     qualitativeOpen.setAttribute('aria-label', `Enlarge ${name.toLowerCase()} video`);
-    qualitativePlayer.changeSource(source);
+    qualitativePlayer.changeSource(source, time);
     if (qualitativeViewer.open) {
-      const time = enlargedVideo.readyState >= HTMLMediaElement.HAVE_METADATA ? enlargedVideo.currentTime : enlargedStart;
       loadEnlarged(qualitativeVideo.src, time, !enlargedVideo.paused);
     }
   });
 
-  qualitativeOpen.addEventListener('pointerenter', event => {
+  qualitativeFrame.addEventListener('pointerenter', event => {
     if (event.pointerType !== 'mouse') return;
     previewHovered = true;
     qualitativePlayer.suspend();
   });
-  qualitativeOpen.addEventListener('pointerleave', event => {
+  qualitativeFrame.addEventListener('pointerleave', event => {
     if (event.pointerType !== 'mouse') return;
     previewHovered = false;
     qualitativePlayer.resume();
@@ -293,7 +298,7 @@
     enlargedVideo.pause();
     enlargedVideo.removeAttribute('src');
     enlargedVideo.load();
-    previewHovered = window.matchMedia('(hover: hover)').matches && qualitativeOpen.matches(':hover');
+    previewHovered = window.matchMedia('(hover: hover)').matches && qualitativeFrame.matches(':hover');
     qualitativePlayer.resume(time);
   });
 

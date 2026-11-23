@@ -1,43 +1,61 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#eeeee7">
-<title>LoopDVR · 实时摄像头</title>
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css?v=4">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Browser demo · LoopDVR</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main>
-  <header><div><p class="project"><a href="../" aria-label="LoopDVR 项目主页">LoopDVR</a></p><h1><b id="model-name">LoopDet-S</b><span> / </span>Live</h1></div><div class="spec">
-    <div>WebGPU<span id="precision"></span></div>
-    <div class="selectors">
-      <label>任务<select id="task" title="停止后可切换任务">
-        <option value="det" selected>目标检测</option>
-        <option value="pose">人体姿态</option>
-        <option value="seg">实例分割</option>
-      </select></label>
-      <label>模型输入<select id="model-size" title="停止后可切换输入尺寸">
-        <option value="512" selected>512 × 512</option>
-        <option value="640">640 × 640</option>
-      </select></label>
+  <header class="top-nav"><nav class="nav-inner" aria-label="Main navigation">
+    <a href="../"><img class="demo-wordmark" src="../assets/logo.png?v=cropped" width="1683" height="379" alt="LoopDVR project page"></a>
+    <a class="back-link" href="../">← Project page</a>
+  </nav></header>
+  <main class="demo" aria-label="LoopDVR browser demo">
+    <div class="demo-workspace">
+      <div class="toolbar">
+        <div class="actions">
+          <button class="resource" id="toggle" type="button">Live</button>
+          <label class="file-action" for="clip"><input class="sr-only" id="clip" type="file" accept="video/*">Choose video</label>
+        </div>
+        <label class="field">Model input
+          <select id="model-size"><option value="512">512 × 512</option><option value="640">640 × 640</option></select>
+        </label>
+        <label class="field threshold">Confidence <output id="level" for="threshold">0.50</output>
+          <input id="threshold" type="range" min="0.05" max="0.95" step="0.01" value="0.50">
+        </label>
+      </div>
+      <fieldset class="task-picker" id="task">
+        <legend class="sr-only">Recognition task</legend>
+        <label><input class="sr-only" type="radio" name="task" value="det" checked><span class="task-name">Object detection</span><small>LoopDet-S</small></label>
+        <label><input class="sr-only" type="radio" name="task" value="seg"><span class="task-name">Instance segmentation</span><small>LoopSeg-S</small></label>
+        <label><input class="sr-only" type="radio" name="task" value="pose"><span class="task-name">Human pose estimation</span><small>LoopPose-S</small></label>
+      </fieldset>
+      <section class="demo-view" aria-label="Prediction viewer">
+        <div class="screen" id="screen" hidden><canvas id="frame"></canvas><canvas id="overlay"></canvas></div>
+        <video id="clip-result" controls playsinline hidden aria-label="Processed video"></video>
+        <div id="idle"><h2 id="task-title">Object detection</h2><p id="status" role="status">Click Live to try with your webcam, or choose a video to run all three tasks.</p></div>
+      </section>
+      <dl id="metrics">
+        <div><dt>Frame rate</dt><dd><span id="fps">—</span> FPS</dd></div>
+        <div><dt>Model latency</dt><dd><span id="latency">—</span> ms</dd></div>
+        <div><dt>Predictions</dt><dd id="count">—</dd></div>
+        <div><dt>Runtime</dt><dd>WebGPU<span id="precision"></span></dd></div>
+      </dl>
     </div>
-  </div></header>
-  <section class="viewer" aria-label="摄像头和模型预测画面">
-    <div class="screen" id="screen" hidden><canvas id="frame"></canvas><canvas id="overlay"></canvas></div>
-    <div id="idle"><span class="focus" aria-hidden="true"></span><h2 id="task-title">目标检测</h2><p>开启摄像头后，画面将在本机处理。</p></div>
-    <span id="lamp" aria-hidden="true"></span>
-  </section>
-  <section class="controls" aria-label="摄像头控制">
-    <button id="toggle" type="button">开启摄像头</button>
-    <label for="threshold">置信度阈值 <output id="level" for="threshold">0.50</output>
-      <input id="threshold" type="range" min="0.05" max="0.95" step="0.01" value="0.50">
-    </label>
-    <dl><div><dt>推理帧率</dt><dd><b id="fps">—</b> FPS</dd></div><div><dt>模型推理</dt><dd><b id="latency">—</b> ms</dd></div><div><dt>当前目标</dt><dd id="count">—</dd></div></dl>
-  </section>
-  <p id="status" role="status">等待开启摄像头</p>
-</main>
-<script type="module" src="camera.js?v=6"></script>
+    <div class="video-actions">
+      <button id="clear-video" type="button" hidden>Cancel processing</button>
+      <a id="download-video" class="resource" download hidden>Download</a>
+    </div>
+    <progress id="progress" max="1" value="0" hidden aria-label="Video inference progress"></progress>
+    <div class="intro">
+      <p>Inference runs in your browser. Your video and camera frames are never uploaded.</p>
+      <p>Frame rate and processing time depend on your device.</p>
+    </div>
+  </main>
+  <script type="module" src="camera.js"></script>
 </body>
 </html>
