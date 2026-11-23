@@ -1,5 +1,5 @@
 import * as ort from './runtime/ort.webgpu.min.mjs';
-import {createMaskRenderer} from './overlays.js?v=4';
+import {createMaskRenderer} from './overlays.js?v=5';
 
 const params = new URL(import.meta.url).searchParams;
 const size = Number(params.get('size') ?? 512);

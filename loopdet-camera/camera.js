@@ -1,4 +1,4 @@
-import {drawPose, instanceColor} from './overlays.js?v=4';
+import {classColor, drawPose} from './overlays.js?v=5';
 
 const el = id => document.getElementById(id);
 const frame = el('frame');
@@ -48,10 +48,10 @@ function drawPredictions(mode, results, maskOverlay) {
   ink.font = '600 ' + Math.round(14 * unit) + 'px system-ui, sans-serif';
   ink.textBaseline = 'middle';
   ink.lineWidth = 2 * unit;
-  for (const [rank, result] of results.entries()) {
+  for (const result of results) {
     const {box, score, label} = result;
     const [x, y, right, bottom] = box.map((n, i) => Math.max(0, Math.min(1, n)) * (i % 2 ? h : w));
-    const color = mode === 'seg' ? instanceColor(rank) : 'hsl(' + ((label * 47 + 83) % 360) + ' 92% 70%)';
+    const color = classColor(label);
     if (mode === 'pose') {
       drawPose(ink, result, w, h, unit);
     } else {
@@ -155,7 +155,7 @@ async function start() {
       classes = await response.json();
     }
     if (active !== run) return;
-    const workerURL = new URL('./detector.js?v=4', import.meta.url);
+    const workerURL = new URL('./detector.js?v=5', import.meta.url);
     workerURL.searchParams.set('size', modelSize.value);
     workerURL.searchParams.set('task', run.task);
     run.worker = new Worker(workerURL, {type: 'module'});

@@ -39,18 +39,18 @@ export function drawPose(ctx, result, width, height, unit) {
   ctx.restore();
 }
 
-// Adjacent score ranks get contrasting hues regardless of their class.
-function packedColor(rank) {
-  const hue = ((83 + rank * 137.508) % 360) / 60;
+// Use the detector's HSL palette (92% saturation, 70% lightness) on both canvases.
+function packedClassColor(label) {
+  const hue = ((83 + label * 47) % 360) / 60;
   const channel = offset => {
     const k = (offset + hue) % 6;
-    return Math.round(255 * (0.96 - 0.70 * Math.max(0, Math.min(k, 4 - k, 1))));
+    return Math.round(255 * (0.976 - 0.552 * Math.max(0, Math.min(k, 4 - k, 1))));
   };
   return (channel(5) << 16) | (channel(3) << 8) | channel(1);
 }
 
-export function instanceColor(rank) {
-  return '#' + packedColor(rank).toString(16).padStart(6, '0');
+export function classColor(label) {
+  return '#' + packedClassColor(label).toString(16).padStart(6, '0');
 }
 
 function visibleBoxArea(box) {
@@ -151,14 +151,14 @@ export function createMaskRenderer(device) {
         words[1] = height;
         words[2] = side;
         words[3] = count;
-        // Small visible boxes take priority only where masks overlap. The GPU
-        // logits and instance colors both retain their original score ranks.
+        // Small boxes take priority in overlaps. Fetch the original mask plane by rank
+        // and its color by class, independent of confidence or drawing order.
         const order = visibleResults.map((result, rank) => ({rank, area: visibleBoxArea(result.box)}));
         order.sort((a, b) => a.area - b.area || a.rank - b.rank);
         for (let i = 0; i < count; i++) {
           const {rank} = order[i];
           words[4 + 2 * i] = rank;
-          words[5 + 2 * i] = packedColor(rank);
+          words[5 + 2 * i] = packedClassColor(visibleResults[rank].label);
         }
         device.queue.writeBuffer(metadata, 0, words, 0, wordCount);
         pass.setPipeline(pipeline);
