@@ -9,8 +9,9 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" sizes="any">
   <link rel="stylesheet" href="css/styles.css?v=wordmark-2">
   <link rel="stylesheet" href="css/results.css">
-  <script src="js/app.js" defer></script>
+  <script src="js/qualitative-overlay.js" defer></script>
   <script src="js/method.js" defer></script>
+  <script src="js/app.js" defer></script>
   <script src="js/results-data.js" defer></script>
   <script src="js/results.js" defer></script>
 </head>
@@ -74,10 +75,9 @@
         <div class="qualitative-player">
           <div class="qualitative-frame">
             <button id="qualitative-open" class="figure-zoom" type="button" aria-haspopup="dialog" aria-label="Enlarge instance segmentation video">
-              <video id="qualitative-video" src="assets/videos/qualitative-segmentation-2.mp4" width="1722" height="720" preload="metadata" muted playsinline loop aria-label="Instance segmentation video"></video>
+              <video id="qualitative-video" src="assets/videos/case3/case3.mp4" width="1280" height="720" preload="metadata" muted playsinline loop aria-label="Instance segmentation video"></video>
+              <canvas class="video-annotations" aria-hidden="true"></canvas>
             </button>
-            <button class="clip-arrow" type="button" data-clip-step="-1" aria-label="Previous video" aria-controls="qualitative-video"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></button>
-            <button class="clip-arrow" type="button" data-clip-step="1" aria-label="Next video" aria-controls="qualitative-video"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
           </div>
           <p id="qualitative-status" class="media-status" role="status"></p>
         </div>
@@ -190,10 +190,11 @@
       <button id="video-tab-pose" type="button" data-video-task="pose" role="tab" aria-selected="false" aria-controls="qualitative-viewer-panel" tabindex="-1">Pose</button>
     </div>
     <div id="qualitative-viewer-panel" class="qualitative-frame" role="tabpanel" aria-labelledby="video-tab-segmentation">
-      <video id="qualitative-enlarged" width="1722" height="720" controls playsinline muted></video>
-      <button class="clip-arrow" type="button" data-clip-step="-1" aria-label="Previous video" aria-controls="qualitative-enlarged"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg></button>
-      <button class="clip-arrow" type="button" data-clip-step="1" aria-label="Next video" aria-controls="qualitative-enlarged"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+      <video id="qualitative-enlarged" width="1280" height="720" controls controlslist="nofullscreen nodownload noremoteplayback" disablepictureinpicture playsinline muted></video>
+      <canvas class="video-annotations" aria-hidden="true"></canvas>
+      <button id="qualitative-fullscreen" type="button" aria-label="Enter fullscreen" title="Fullscreen" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5"/></svg></button>
     </div>
+    <p id="qualitative-viewer-status" class="media-status" role="status"></p>
   </dialog>
 
   <dialog id="case-viewer" aria-labelledby="viewer-title">

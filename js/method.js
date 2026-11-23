@@ -105,14 +105,6 @@
       syncControl();
     }
 
-    function changeSource(source, time) {
-      pendingSeek = time;
-      suspend();
-      status.textContent = '';
-      video.src = source;
-      video.load();
-    }
-
     function cancelAutoplay() {
       if (autoplayTimer === null) return;
       clearTimeout(autoplayTimer);
@@ -208,7 +200,6 @@
     return {
       request,
       suspend,
-      changeSource,
       position: () => pendingSeek ?? video.currentTime,
       resume(time) {
         if (time !== undefined) pendingSeek = time;
@@ -231,38 +222,45 @@
   const qualitativeViewer = document.querySelector('#qualitative-viewer');
   const enlargedVideo = document.querySelector('#qualitative-enlarged');
   const enlargedTitle = document.querySelector('#qualitative-viewer-title');
+  const enlargedPanel = document.querySelector('#qualitative-viewer-panel');
+  const fullscreen = document.querySelector('#qualitative-fullscreen');
+  const inlineStatus = document.querySelector('#qualitative-status');
+  const viewerStatus = document.querySelector('#qualitative-viewer-status');
+  const showInlineLayer = qualitativeOverlay.attach(qualitativeVideo, qualitativeOpen.querySelector('canvas'));
+  const showEnlargedLayer = qualitativeOverlay.attach(enlargedVideo, enlargedPanel.querySelector('canvas'));
+  let selectedLayer = null;
+  let loadedLayer = null;
   let previewHovered = false;
   let enlargedStart = 0;
   const qualitativePlayer = createPlayer({
     video: qualitativeVideo,
     observedElement: qualitativeVideo,
-    status: document.querySelector('#qualitative-status'),
+    status: inlineStatus,
     initialTime: 0,
     label: 'qualitative results',
     autoplayDelay: 0,
-    canPlay: () => !previewHovered && !qualitativeViewer.open
+    canPlay: () => loadedLayer && !previewHovered && !qualitativeViewer.open
   });
-  function loadEnlarged(source, time, playing) {
-    enlargedStart = time;
-    enlargedTitle.textContent = qualitativeVideo.getAttribute('aria-label');
-    enlargedVideo.src = source;
-    if (playing) enlargedVideo.play().catch(() => {
-      // Native controls allow playback to be started manually.
-    });
-  }
-
-  document.querySelector('#case-panel').addEventListener('qualitative-videochange', event => {
-    const { source, name, restart } = event.detail;
-    let time = qualitativePlayer.position();
-    if (qualitativeViewer.open) {
-      time = enlargedVideo.readyState >= HTMLMediaElement.HAVE_METADATA ? enlargedVideo.currentTime : enlargedStart;
-    }
-    if (restart) time = 0;
+  document.querySelector('#case-panel').addEventListener('qualitative-taskchange', async event => {
+    const {suffix, name} = event.detail;
+    selectedLayer = suffix;
+    loadedLayer = null;
     qualitativeVideo.setAttribute('aria-label', `${name} video`);
     qualitativeOpen.setAttribute('aria-label', `Enlarge ${name.toLowerCase()} video`);
-    qualitativePlayer.changeSource(source, time);
-    if (qualitativeViewer.open) {
-      loadEnlarged(qualitativeVideo.src, time, !enlargedVideo.paused);
+    enlargedVideo.setAttribute('aria-label', `${name} video`);
+    enlargedTitle.textContent = `${name} video`;
+    showInlineLayer(null);
+    showEnlargedLayer(null);
+    inlineStatus.textContent = viewerStatus.textContent = '';
+    try {
+      const layer = await qualitativeOverlay.load(suffix);
+      if (selectedLayer !== suffix) return;
+      loadedLayer = layer;
+      showInlineLayer(layer);
+      if (qualitativeViewer.open) showEnlargedLayer(layer);
+      qualitativePlayer.resume();
+    } catch (error) {
+      if (selectedLayer === suffix) inlineStatus.textContent = viewerStatus.textContent = error.message;
     }
   });
 
@@ -278,13 +276,25 @@
   });
 
   qualitativeOpen.addEventListener('click', () => {
-    const time = qualitativePlayer.position();
+    enlargedStart = qualitativePlayer.position();
     qualitativeViewer.showModal();
     qualitativePlayer.suspend();
-    loadEnlarged(qualitativeVideo.src, time, true);
+    enlargedVideo.src = qualitativeVideo.src;
+    enlargedVideo.currentTime = enlargedStart;
+    showEnlargedLayer(loadedLayer);
+    enlargedVideo.play().catch(() => { /* Native controls allow manual playback. */ });
   });
-  enlargedVideo.addEventListener('loadedmetadata', () => {
-    if (qualitativeViewer.open) enlargedVideo.currentTime = Math.min(enlargedStart, enlargedVideo.duration);
+  fullscreen.hidden = !document.fullscreenEnabled;
+  fullscreen.addEventListener('click', async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await enlargedPanel.requestFullscreen();
+    } catch {
+      viewerStatus.textContent = 'Fullscreen could not be opened.';
+    }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    fullscreen.setAttribute('aria-label', document.fullscreenElement ? 'Exit fullscreen' : 'Enter fullscreen');
   });
   document.querySelector('#qualitative-close').addEventListener('click', () => qualitativeViewer.close());
   qualitativeViewer.addEventListener('click', event => {
@@ -296,6 +306,7 @@
   qualitativeViewer.addEventListener('close', () => {
     const time = enlargedVideo.readyState >= HTMLMediaElement.HAVE_METADATA ? enlargedVideo.currentTime : enlargedStart;
     enlargedVideo.pause();
+    showEnlargedLayer(null);
     enlargedVideo.removeAttribute('src');
     enlargedVideo.load();
     previewHovered = window.matchMedia('(hover: hover)').matches && qualitativeFrame.matches(':hover');

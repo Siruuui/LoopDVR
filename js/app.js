@@ -25,9 +25,7 @@
   const taskButtons = Array.from(document.querySelectorAll('#case-tabs [data-task]'));
   const videoTaskButtons = Array.from(document.querySelectorAll('#qualitative-viewer-tabs [data-video-task]'));
   const videoPanel = document.querySelector('#qualitative-viewer-panel');
-  const clipSuffixes = ['', '-2'];
   let selectedTask = 'segmentation';
-  let clipIndex = 1;
 
   function setTabState(buttons, selected, attribute) {
     buttons.forEach(button => {
@@ -156,28 +154,13 @@
     scrollPosition = gallery.scrollLeft;
     gallery.replaceChildren(fragment);
     measureGallery();
-  }
-
-  function updateVideo(restart) {
-    casePanel.dispatchEvent(new CustomEvent('qualitative-videochange', {
-      detail: {
-        source: `assets/videos/qualitative-${selectedTask}${clipSuffixes[clipIndex]}.mp4`,
-        name: tasks[selectedTask].name,
-        restart
-      }
-    }));
+    casePanel.dispatchEvent(new CustomEvent('qualitative-taskchange', { detail: tasks[task] }));
   }
 
   function selectTask(task) {
     if (!Object.hasOwn(tasks, task) || task === selectedTask) return;
     renderGallery(task);
-    updateVideo(false);
   }
-
-  document.querySelectorAll('[data-clip-step]').forEach(button => button.addEventListener('click', () => {
-    clipIndex = (clipIndex + Number(button.dataset.clipStep) + clipSuffixes.length) % clipSuffixes.length;
-    updateVideo(true);
-  }));
 
   taskButtons.forEach(button => button.addEventListener('click', () => selectTask(button.dataset.task)));
   bindTabKeys(taskButtons, button => selectTask(button.dataset.task));
