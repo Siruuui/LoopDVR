@@ -186,7 +186,7 @@ def fuse_head_attention(nodes, replacements):
 
 def optimize_graph(model: onnx.ModelProto, size: int) -> onnx.ModelProto:
     """Fuse all twelve backbone steps of the 100-query detector with four decoder updates."""
-    require(size in (512, 640), 'expected a square input of 512 or 640 pixels')
+    require(size in (512, 640, 704), 'expected a square input of 512, 640 or 704 pixels')
     graph = model.graph
     signature = [(value.name, value.type.tensor_type.elem_type, [d.dim_value for d in value.type.tensor_type.shape.dim])
                  for value in [*graph.input, *graph.output]]

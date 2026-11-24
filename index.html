@@ -7,10 +7,12 @@
   <meta name="theme-color" content="#ffffff">
   <title>LoopDVR — Looped Transformer for Efficient Dense Visual Recognition</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" sizes="any">
-  <link rel="stylesheet" href="css/styles.css?v=demo-button">
+  <link rel="stylesheet" href="css/styles.css?v=demo-entry-spacing">
   <link rel="stylesheet" href="css/results.css">
   <script src="js/qualitative-overlay.js" defer></script>
   <script src="js/method.js" defer></script>
+  <script src="assets/cases/data.js" defer></script>
+  <script src="assets/cases/overlay.js" defer></script>
   <script src="js/app.js" defer></script>
   <script src="js/results-data.js" defer></script>
   <script src="js/results.js" defer></script>
@@ -54,15 +56,15 @@
   <main id="main-content">
       <figure class="comparison-figure">
         <div class="comparison-grid">
-          <figure><button class="figure-zoom" data-zoom="assets/charts/detection.png" data-caption="Object detection · LoopDet" aria-label="Enlarge object detection comparison"><img src="assets/charts/detection.png" width="1786" height="1270" alt="Object detection accuracy versus parameters on COCO: LoopDet at 50.9, 54.0, 56.6, and 57.5 AP."></button><figcaption><span class="task-dot detection"></span>Object detection</figcaption></figure>
-          <figure><button class="figure-zoom" data-zoom="assets/charts/segmentation.png" data-caption="Instance segmentation · LoopSeg" aria-label="Enlarge instance segmentation comparison"><img src="assets/charts/segmentation.png" width="1786" height="1270" alt="Instance segmentation accuracy versus parameters on COCO: LoopSeg at 43.0, 45.5, 48.1, and 48.9 AP."></button><figcaption><span class="task-dot segmentation"></span>Instance segmentation</figcaption></figure>
-          <figure><button class="figure-zoom" data-zoom="assets/charts/pose.png?v=20261112" data-caption="Human pose estimation · LoopPose" aria-label="Enlarge human pose estimation comparison"><img src="assets/charts/pose.png?v=20261112" width="1786" height="1270" alt="Human pose estimation accuracy versus parameters on COCO: LoopPose at 68.2, 71.8, 72.9, and 74.3 AP."></button><figcaption><span class="task-dot pose"></span>Human pose estimation</figcaption></figure>
+          <figure><button class="figure-zoom" data-zoom="assets/charts/detection.svg" data-caption="Object detection · LoopDet" aria-label="Enlarge object detection comparison"><img src="assets/charts/detection.svg" width="1786" height="1270" alt="Object detection accuracy versus parameters on COCO: LoopDet at 50.9, 54.0, 56.6, and 57.5 AP."></button><figcaption><span class="task-dot detection"></span>Object detection</figcaption></figure>
+          <figure><button class="figure-zoom" data-zoom="assets/charts/segmentation.svg" data-caption="Instance segmentation · LoopSeg" aria-label="Enlarge instance segmentation comparison"><img src="assets/charts/segmentation.svg" width="1786" height="1270" alt="Instance segmentation accuracy versus parameters on COCO: LoopSeg at 43.0, 45.5, 48.1, and 48.9 AP."></button><figcaption><span class="task-dot segmentation"></span>Instance segmentation</figcaption></figure>
+          <figure><button class="figure-zoom" data-zoom="assets/charts/pose.svg" data-caption="Human pose estimation · LoopPose" aria-label="Enlarge human pose estimation comparison"><img src="assets/charts/pose.svg" width="1786" height="1270" alt="Human pose estimation accuracy versus parameters on COCO: LoopPose at 68.2, 71.8, 72.9, and 74.3 AP."></button><figcaption><span class="task-dot pose"></span>Human pose estimation</figcaption></figure>
         </div>
         <figcaption class="figure-note">Achieving exceptional parameter efficiency via looped Transformer.</figcaption>
       </figure>
       <a class="demo-entry" id="browser-demo" href="./loopdet-camera/" target="_blank" rel="noopener noreferrer">
         <strong><span aria-hidden="true">🖥️</span>&nbsp;Try LoopDVR in your browser!</strong>
-        <span class="resource demo-action">Open demo <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12"/></svg><span class="sr-only"> (opens in a new tab)</span></span>
+        <span class="resource demo-action">Open Demo <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12"/></svg><span class="sr-only"> (opens in a new tab)</span></span>
       </a>
     <section class="content-section results-section" id="results" aria-labelledby="results-heading">
       <h2 id="results-heading">Qualitative results</h2>
@@ -200,7 +202,7 @@
   <dialog id="case-viewer" aria-labelledby="viewer-title">
     <div class="viewer-header"><h2 id="viewer-title">Qualitative results</h2><button id="viewer-close" class="close-button" aria-label="Close image viewer">Close <span aria-hidden="true">×</span></button></div>
     <div id="viewer-task-tabs" class="task-tabs" role="tablist" aria-label="Compare tasks in this scene"><button data-viewer-task="detection" role="tab" aria-selected="true">Detection</button><button data-viewer-task="segmentation" role="tab" aria-selected="false" tabindex="-1">Segmentation</button><button data-viewer-task="pose" role="tab" aria-selected="false" tabindex="-1">Pose</button></div>
-    <div class="viewer-stage"><button id="viewer-prev" class="round-button" aria-label="Previous scene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><img id="viewer-image" alt=""><button id="viewer-next" class="round-button" aria-label="Next scene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div>
+    <div class="viewer-stage"><button id="viewer-prev" class="round-button" aria-label="Previous scene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><img id="viewer-image" alt=""><div id="viewer-case" hidden></div><button id="viewer-next" class="round-button" aria-label="Next scene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div>
     <p id="viewer-caption" class="figure-note"></p>
   </dialog>
 </body>

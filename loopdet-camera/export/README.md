@@ -1,18 +1,18 @@
 # Export the webcam models
 
-All three tasks use their released S checkpoint, run all 12 backbone steps and consume square, ImageNet-normalized RGB. The page defaults to 512 × 512 and a confidence threshold of 0.50. The 640 × 640 option uses the release input size. Both sizes are exported as fixed graphs with their own position and anchor grids.
+All three tasks use their released S checkpoint, run all 12 backbone steps and consume square, ImageNet-normalized RGB. The page defaults to 512 × 512 and a confidence threshold of 0.50. The 640 × 640 option uses the release input size. 704 × 704 is the optional higher-resolution input. All three sizes are exported as fixed graphs with their own position and anchor grids.
 
 | Task | Encoder proposals | Decoder route | Outputs |
 |---|---:|---|---|
 | LoopDet-S | 100 | G0 → G0 → G1 → G1 | Normalized xyxy boxes, scores, contiguous COCO class indices |
-| LoopPose-S | 24 at 512, 60 at 640 | G0 → G0 → G1 → G1 | Person scores and 17 normalized COCO keypoints per person |
-| LoopSeg-S | 100 at 512, 300 at 640 | G0 → G0 → G1 → G1 | Normalized boxes, scores, classes and per-instance mask logits |
+| LoopPose-S | 24 at 512, 60 at 640 and 704 | G0 → G0 → G1 → G1 | Person scores and 17 normalized COCO keypoints per person |
+| LoopSeg-S | 100 at 512, 300 at 640 and 704 | G0 → G0 → G1 → G1 | Normalized boxes, scores, classes and per-instance mask logits |
 
-G0 and G1 denote two distinct trained decoder blocks within each task. Each step uses its own adapter. At both input sizes the detection web model runs the complete four-step decoder and uses G1's classification and localization-quality heads at the final step. It takes the top 100 encoder proposals. The original detection release takes 300.
+G0 and G1 denote two distinct trained decoder blocks within each task. Each step uses its own adapter. At all three input sizes the detection web model runs the complete four-step decoder and uses G1's classification and localization-quality heads at the final step. It takes the top 100 encoder proposals. The original detection release takes 300.
 
-At 512, the pose graph takes the top 24 encoder proposals together with the corresponding 24 learned rank embeddings. At 640, it takes the full 60. Both sizes use the release query/class ranking rule, filter to the COCO person category, sort by person score and pad unused rows with zero scores. The 17 keypoints are in COCO order. Their bounding rectangle anchors the on-screen label. The model supplies one score per person.
+At 512, the pose graph takes the top 24 encoder proposals together with the corresponding 24 learned rank embeddings. At 640 and 704, it takes the full 60. All sizes use the release query/class ranking rule, filter to the COCO person category, sort by person score and pad unused rows with zero scores. The 17 keypoints are in COCO order. Their bounding rectangle anchors the on-screen label. The model supplies one score per person.
 
-The segmentation graph ranks all query/class pairs as in the release. At 512 it decodes the top 100 encoder proposals, at 640 the full 300. Its output mask planes follow the same ordering as the boxes and scores. Each mask is a float32 logit grid at one-quarter the input width and height. The browser samples it bilinearly at video pixel centers with boundary replication, then applies the release threshold of zero. Detection boxes, segmentation boxes and mask fills share the same color for a given COCO category across instances and frames. The confidence slider controls the instance score. Where masks overlap, the renderer gives the smaller visible bounding box priority, with score as a tiebreaker. This keeps nested instances visible, such as a cat sitting on a chair.
+The segmentation graph ranks all query/class pairs as in the release. At 512 it decodes the top 100 encoder proposals, at 640 and 704 the full 300. Its output mask planes follow the same ordering as the boxes and scores. Each mask is a float32 logit grid at one-quarter the input width and height. The browser samples it bilinearly at video pixel centers with boundary replication, then applies the release threshold of zero. Detection boxes, segmentation boxes and mask fills share the same color for a given COCO category across instances and frames. The confidence slider controls the instance score. Where masks overlap, the renderer gives the smaller visible bounding box priority, with score as a tiebreaker. This keeps nested instances visible, such as a cat sitting on a chair.
 
 ## Rebuild
 
@@ -35,6 +35,6 @@ python pose.py --repo "$LOOPDVR_REPO" --weights "$LOOPDVR_REPO/weights/looppose-
 python export_seg.py --repo "$LOOPDVR_REPO" --weights "$LOOPDVR_REPO/weights/loopseg-s.pth" --output ..
 ```
 
-Pass `--size 512` or `--size 640` to build a single resolution. At runtime the page loads only the selected task and resolution, choosing FP16 when the WebGPU adapter exposes `shader-f16` and FP32 otherwise. All graphs accept a float32 `images` tensor of shape `[1, 3, size, size]`. The channel mean is `[0.485, 0.456, 0.406]` and standard deviation is `[0.229, 0.224, 0.225]` after scaling pixels to [0, 1]. The exported graphs target ONNX opset 18 and ONNX Runtime Web 1.31.1.
+Pass `--size 512`, `--size 640` or `--size 704` to build a single resolution. At runtime the page loads only the selected task and resolution, choosing FP16 when the WebGPU adapter exposes `shader-f16` and FP32 otherwise. All graphs accept a float32 `images` tensor of shape `[1, 3, size, size]`. The channel mean is `[0.485, 0.456, 0.406]` and standard deviation is `[0.229, 0.224, 0.225]` after scaling pixels to [0, 1]. The exported graphs target ONNX opset 18 and ONNX Runtime Web 1.31.1.
 
 The [project license](LICENSE) accompanies the exporter. The release checkout retains the component license notices, including those in `loopdvr/models/looped_vit.py`. Keep `MODEL-LICENSE.txt` and `runtime/LICENSE.txt` with their respective assets when distributing the browser demo.

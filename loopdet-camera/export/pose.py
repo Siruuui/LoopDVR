@@ -9,12 +9,12 @@ import onnx
 import torch
 
 
-SIZES = (640, 512)
+SIZES = (640, 512, 704)
 
 
 def load_pose(repo, weights, size):
     if size not in SIZES or not (repo / 'loopdvr/build.py').is_file():
-        raise ValueError('Expected a LoopDVR release checkout and a 512- or 640-pixel pose profile')
+        raise ValueError('Expected a LoopDVR release checkout and a 512-, 640- or 704-pixel pose profile')
     sys.path.insert(0, str(repo.resolve()))
     from loopdvr.build import LoopDVR, build_model, load_config
 
@@ -85,7 +85,7 @@ def main():
     parser.add_argument('--repo', type=Path, required=True, help='LoopDVR release checkout')
     parser.add_argument('--weights', type=Path, required=True, help='Released looppose-s.pth checkpoint')
     parser.add_argument('--output', type=Path, required=True, help='Destination for webcam ONNX files')
-    parser.add_argument('--size', type=int, choices=SIZES, help='Export one resolution (default: both)')
+    parser.add_argument('--size', type=int, choices=SIZES, help='Export one resolution (default: all)')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     with TemporaryDirectory(dir=args.output) as temp:

@@ -1,4 +1,4 @@
-"""Export the 640- and 512-pixel LoopDet-S WebGPU webcam profiles."""
+"""Export the 512-, 640- and 704-pixel LoopDet-S WebGPU webcam profiles."""
 
 import argparse
 from collections import Counter
@@ -15,7 +15,7 @@ import torch
 from fusions import optimize_graph
 
 
-SIZES = (640, 512)
+SIZES = (640, 512, 704)
 
 
 def trace_release(repo, weights, size, destination):
@@ -105,7 +105,7 @@ def main():
     parser.add_argument('--repo', type=Path, required=True, help='LoopDVR release checkout')
     parser.add_argument('--weights', type=Path, required=True, help='Released loopdet-s.pth checkpoint')
     parser.add_argument('--output', type=Path, required=True, help='Destination for the webcam ONNX files')
-    parser.add_argument('--size', type=int, choices=SIZES, help='Export one profile (default: both)')
+    parser.add_argument('--size', type=int, choices=SIZES, help='Export one profile (default: all)')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     with TemporaryDirectory(dir=args.output) as temp:

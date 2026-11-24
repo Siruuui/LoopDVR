@@ -7,7 +7,7 @@
   <title>Browser demo · LoopDVR</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../css/styles.css">
-  <link rel="stylesheet" href="style.css?v=ui3">
+  <link rel="stylesheet" href="style.css?v=video4">
 </head>
 <body>
   <header class="top-nav"><nav class="nav-inner" aria-label="Main navigation">
@@ -22,7 +22,7 @@
           <label class="file-action" for="clip"><input class="sr-only" id="clip" type="file" accept="video/*">Choose video</label>
         </div>
         <label class="field">Model input
-          <select id="model-size"><option value="512">512 × 512</option><option value="640">640 × 640</option></select>
+          <select id="model-size" autocomplete="off"><option value="512" selected>512 × 512</option><option value="640">640 × 640</option><option value="704">704 × 704</option></select>
         </label>
         <label class="field threshold">Confidence <output id="level" for="threshold">0.50</output>
           <input id="threshold" type="range" min="0.05" max="0.95" step="0.01" value="0.50">
@@ -40,23 +40,23 @@
         <div id="idle"><h2 id="task-title">Object detection</h2><p id="status" role="status">Click Live to try with your webcam, or choose a video to run detection, segmentation, then pose.</p></div>
       </section>
       <dl id="metrics">
-        <div><dt>Frame rate</dt><dd><span id="fps">—</span> FPS</dd></div>
-        <div><dt>Model latency</dt><dd><span id="latency">—</span> ms</dd></div>
-        <div><dt>Predictions</dt><dd id="count">—</dd></div>
+        <div><dt id="rate-label">Frame rate</dt><dd><span id="fps">—</span> FPS</dd></div>
+        <div><dt id="latency-label">Model latency</dt><dd><span id="latency">—</span> ms</dd></div>
+        <div><dt id="count-label">Predictions</dt><dd id="count">—</dd></div>
         <div><dt>Runtime</dt><dd>WebGPU<span id="precision"></span></dd></div>
       </dl>
+      <div class="video-actions">
+        <span id="video-stage" role="status"></span>
+        <button id="clear-video" type="button" hidden>Cancel processing</button>
+        <a id="download-video" class="resource" download hidden>Download</a>
+      </div>
+      <progress id="progress" max="1" value="0" hidden aria-label="Video inference progress"></progress>
     </div>
-    <div class="video-actions">
-      <span id="video-stage" role="status"></span>
-      <button id="clear-video" type="button" hidden>Cancel processing</button>
-      <a id="download-video" class="resource" download hidden>Download</a>
-    </div>
-    <progress id="progress" max="1" value="0" hidden aria-label="Video inference progress"></progress>
     <div class="intro">
       <p>Inference runs in your browser. Your video and camera frames are never uploaded.</p>
       <p>Frame rate and processing time depend on your device.</p>
     </div>
   </main>
-  <script type="module" src="camera.js?v=ui3"></script>
+  <script type="module" src="camera.js?v=704"></script>
 </body>
 </html>

@@ -84,7 +84,7 @@ def fuse_pose_attention(nodes, replacements):
 
 def optimize_pose_graph(model: onnx.ModelProto, size: int) -> onnx.ModelProto:
     """Optimize the released, four-update LoopPose-S graph in place."""
-    require(size in (512, 640), 'expected a 512- or 640-pixel input')
+    require(size in (512, 640, 704), 'expected a 512-, 640- or 704-pixel input')
     graph = model.graph
     require(len(graph.input) == 1 and graph.input[0].name == 'images' and
             graph.input[0].type.tensor_type.elem_type == TensorProto.FLOAT and

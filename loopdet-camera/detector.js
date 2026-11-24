@@ -5,7 +5,7 @@ import {modelURL} from './model-url.js';
 const params = new URL(import.meta.url).searchParams;
 const size = Number(params.get('size') ?? 512);
 const task = params.get('task') ?? 'det';
-if (![640, 512].includes(size)) throw new Error('Unsupported model input size.');
+if (![512, 640, 704].includes(size)) throw new Error('Unsupported model input size.');
 if (!['det', 'pose', 'seg'].includes(task)) throw new Error('Unsupported recognition task.');
 const area = size * size;
 const canvas = new OffscreenCanvas(size, size);

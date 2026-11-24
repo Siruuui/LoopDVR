@@ -2,15 +2,15 @@
   'use strict';
 
   const scenes = [
-    { stem: '01_512_000000329827', name: 'Motion blur' },
-    { stem: '05_312_000000018380', name: 'Crowded scenes' },
-    { stem: '02_249_000000532493', name: 'Object rotation' },
-    { stem: '03_043_000000190140', name: 'Severe truncation' },
-    { stem: '04_338_000000448410', name: 'Occlusion' },
-    { stem: '06_472_000000125936', name: 'Occlusion' },
-    { stem: '07_008_000000501005', name: 'Occlusion' },
-    { stem: '08_342_000000133969', name: 'Defocus' },
-    { stem: '09_339_000000551820', name: 'Motion blur' }
+    { id: '000000329827', name: 'Motion blur' },
+    { id: '000000018380', name: 'Crowded scenes' },
+    { id: '000000532493', name: 'Object rotation' },
+    { id: '000000190140', name: 'Severe truncation' },
+    { id: '000000448410', name: 'Occlusion' },
+    { id: '000000125936', name: 'Occlusion' },
+    { id: '000000501005', name: 'Occlusion' },
+    { id: '000000133969', name: 'Defocus' },
+    { id: '000000551820', name: 'Motion blur' }
   ];
   const tasks = {
     detection: { suffix: 'det', name: 'Object detection', model: 'LoopDet-X' },
@@ -18,7 +18,29 @@
     pose: { suffix: 'pose', name: 'Human pose estimation', model: 'LoopPose-X' }
   };
   const pad = number => String(number).padStart(2, '0');
-  const caseSource = (task, index) => `assets/cases/${task}/${scenes[index].stem}_${tasks[task].suffix}.webp`;
+  const {layout, cases} = nineImageDemo;
+  function makeCaseImage(scene, task, width) {
+    const index = layout.transforms.findIndex(item => item.image_id === Number(scene.id));
+    const transform = layout.transforms[index];
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = Math.round(width * transform.output_size[1] / transform.output_size[0]);
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', `${task.model} predictions for ${scene.name.toLowerCase()}`);
+    const image = new Image();
+    image.onload = () => {
+      drawOverlay(canvas, layout, transform, cases[index].predictions, task.suffix);
+      const ctx = canvas.getContext('2d');
+      const [left, top, right, bottom] = transform.crop;
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-over';
+      ctx.drawImage(image, left, top, right - left, bottom - top, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    };
+    image.onerror = () => canvas.replaceWith(document.createTextNode('Case image unavailable.'));
+    image.src = 'assets/cases/' + transform.image;
+    return canvas;
+  }
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const gallery = document.querySelector('#case-gallery');
   const casePanel = document.querySelector('#case-panel');
@@ -135,14 +157,7 @@
           card.tabIndex = -1;
           card.addEventListener('mousedown', event => event.preventDefault());
         }
-        const image = document.createElement('img');
-        image.src = caseSource(task, index);
-        image.alt = copy > 0 ? '' : `${tasks[task].model} predictions — ${scene.name.toLowerCase()}`;
-        image.width = 1200;
-        image.height = 800;
-        image.loading = index < 3 ? 'eager' : 'lazy';
-        image.decoding = 'async';
-        image.draggable = false;
+        const image = makeCaseImage(scene, tasks[task], 400);
         const caption = document.createElement('span');
         caption.className = 'case-caption';
         caption.textContent = `${pad(index + 1)}  ${scene.name}`;
@@ -203,6 +218,7 @@
 
   const viewer = document.querySelector('#case-viewer');
   const viewerImage = document.querySelector('#viewer-image');
+  const viewerCase = document.querySelector('#viewer-case');
   const viewerTitle = document.querySelector('#viewer-title');
   const viewerCaption = document.querySelector('#viewer-caption');
   const viewerPrevious = document.querySelector('#viewer-prev');
@@ -227,9 +243,10 @@
     const scene = scenes[viewerIndex];
     const task = tasks[viewerTask];
     viewerTitle.textContent = `${task.model} · ${scene.name}`;
-    viewerImage.src = caseSource(viewerTask, viewerIndex);
-    viewerImage.alt = `${task.model} ${task.name.toLowerCase()} predictions for ${scene.name.toLowerCase()}`;
-    viewerCaption.textContent = `${pad(viewerIndex + 1)} / ${pad(scenes.length)} · ${task.name} · COCO ${scene.stem.split('_')[2]}`;
+    viewerImage.hidden = true;
+    viewerCase.hidden = false;
+    viewerCase.replaceChildren(makeCaseImage(scene, task, 1200));
+    viewerCaption.textContent = `${pad(viewerIndex + 1)} / ${pad(scenes.length)} · ${task.name} · COCO ${scene.id}`;
     setTabState(viewerTaskButtons, viewerTask, 'viewerTask');
     viewerPrevious.disabled = viewerIndex === 0;
     viewerNext.disabled = viewerIndex === scenes.length - 1;
@@ -283,6 +300,8 @@
   document.querySelectorAll('[data-zoom]').forEach(button => {
     button.addEventListener('click', () => {
       viewerMode = 'figure';
+      viewerCase.hidden = true;
+      viewerImage.hidden = false;
       viewerTaskTabs.hidden = true;
       viewerPrevious.hidden = true;
       viewerNext.hidden = true;

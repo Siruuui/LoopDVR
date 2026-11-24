@@ -1,4 +1,4 @@
-import {initVideoUpload} from './video-upload.js?v=ui3';
+import {initVideoUpload} from './video-upload.js?v=704';
 import {drawPredictions} from './annotations.js';
 
 const el = id => document.getElementById(id);
@@ -126,7 +126,7 @@ async function start() {
       classes = await response.json();
     }
     if (active !== run) return;
-    const workerURL = new URL('./detector.js', import.meta.url);
+    const workerURL = new URL('./detector.js?v=704', import.meta.url);
     workerURL.searchParams.set('size', run.size);
     workerURL.searchParams.set('task', run.task);
     run.worker = new Worker(workerURL, {type: 'module'});

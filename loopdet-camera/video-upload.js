@@ -57,7 +57,7 @@ function makeOutput(task, job, config) {
   const context = canvas.getContext('2d', {alpha: false});
   const target = new ArrayBufferTarget();
   const muxer = new Muxer({target, video: {codec: 'vp9', width: canvas.width, height: canvas.height, frameRate}, fastStart: 'in-memory'});
-  const url = new URL('./detector.js?v=video2', import.meta.url);
+  const url = new URL('./detector.js?v=704', import.meta.url);
   url.searchParams.set('size', job.size);
   url.searchParams.set('task', task);
   const worker = new Worker(url, {type: 'module'});
@@ -90,6 +90,7 @@ async function renderFrame(task, output, job, classes, timestamp, duration, inde
   try { output.encoder.encode(annotated, {keyFrame: index % (frameRate * 2) === 0}); }
   finally { annotated.close(); }
   if (output.encoder.encodeQueueSize >= 4) await output.encoder.flush();
+  return {latency: data.ms, count: data.results.length};
 }
 
 function releaseOutput(job) {
@@ -138,9 +139,17 @@ async function processVideo(job, view) {
     const weights = await nextModel;
     signal.throwIfAborted();
     if (weights?.error) throw weights.error;
+    if (weights) view.initializing(task);
     const output = makeOutput(task, job, config);
+    let summary;
     try {
       const {precision} = await workerRequest(output.worker, {type: 'load', ...weights}, signal, weights ? [weights.modelBytes] : []);
+      signal.throwIfAborted();
+      view.ready(task, precision);
+      const startedAt = performance.now();
+      const processingFps = frames => frames * 1000 / Math.max(1, performance.now() - startedAt);
+      let latencySum = 0;
+      let predictionSum = 0;
       for (let i = 0; i < total; i++) {
         signal.throwIfAborted();
         const time = i / frameRate;
@@ -152,10 +161,12 @@ async function processVideo(job, view) {
         signal.throwIfAborted();
         const timestamp = Math.round(time * 1e6);
         const duration = Math.max(1, Math.round(Math.min(video.duration, (i + 1) / frameRate) * 1e6) - timestamp);
-        await renderFrame(task, output, job, classes, timestamp, duration, i);
+        const {latency, count} = await renderFrame(task, output, job, classes, timestamp, duration, i);
         signal.throwIfAborted();
+        latencySum += latency;
+        predictionSum += count;
         job.hasFrame = true;
-        view.frame(task, i === 0);
+        view.frame(task, i === 0, {fps: processingFps(i + 1), latency, count, precision});
         progress.value = stage * total + i + 1;
         if (i === 0 && stage + 1 < tasks.length) {
           // Download bytes during this pass; create the next GPU session only after this worker is released.
@@ -164,12 +175,13 @@ async function processVideo(job, view) {
       }
       await output.encoder.flush();
       signal.throwIfAborted();
+      summary = {fps: processingFps(total), latency: latencySum / total, count: predictionSum / total, precision};
       output.muxer.finalize();
       job.results.set(task, URL.createObjectURL(new Blob([output.target.buffer], {type: 'video/mp4'})));
     } finally {
       releaseOutput(job);
     }
-    view.result(task);
+    view.result(task, summary);
   }
 }
 
@@ -182,6 +194,15 @@ export function initVideoUpload({stopCamera, message, getTask, selectTask}) {
   const progress = byId('progress');
   const stageLabel = byId('video-stage');
   const choices = byId('task').querySelectorAll('input');
+  function showMetrics(stats, finished = false) {
+    byId('rate-label').textContent = 'Processing rate';
+    byId('latency-label').textContent = finished ? 'Avg. model latency' : 'Model latency';
+    byId('count-label').textContent = finished ? 'Avg. predictions / frame' : 'Predictions';
+    byId('fps').textContent = stats ? stats.fps.toFixed(1) : '—';
+    byId('latency').textContent = stats ? Math.round(stats.latency) : '—';
+    byId('count').textContent = stats ? (finished ? stats.count.toFixed(1) : stats.count) : '—';
+    byId('precision').textContent = stats ? ' · ' + stats.precision.toUpperCase() : '';
+  }
   function clear() {
     if (!current) return;
     current.controller.abort();
@@ -195,6 +216,9 @@ export function initVideoUpload({stopCamera, message, getTask, selectTask}) {
     for (const url of current.results.values()) URL.revokeObjectURL(url);
     current = null;
     stageLabel.textContent = '';
+    stageLabel.classList.remove('waiting');
+    showMetrics(null);
+    byId('rate-label').textContent = 'Frame rate';
     for (const choice of choices) choice.disabled = false;
     clearButton.hidden = player.hidden = progress.hidden = byId('screen').hidden = true;
     byId('idle').hidden = byId('model-size').disabled = byId('threshold').disabled = false;
@@ -204,6 +228,7 @@ export function initVideoUpload({stopCamera, message, getTask, selectTask}) {
     if (!job) return;
     const task = getTask();
     const result = job.results.get(task);
+    showMetrics(job.stats.get(task), Boolean(result));
     if (result) {
       if (player.getAttribute('src') !== result) {
         const time = player.currentTime;
@@ -229,9 +254,14 @@ export function initVideoUpload({stopCamera, message, getTask, selectTask}) {
       }
       preview.getContext('2d').drawImage(canvas, 0, 0);
       byId('screen').hidden = false;
+    } else if (task === job.task) {
+      player.pause();
+      player.onloadedmetadata = null;
+      player.hidden = download.hidden = byId('screen').hidden = true;
+      byId('idle').hidden = false;
+      message(job.waitMessage, 'loading');
     }
   }
-  player.addEventListener('play', () => { if (current) current.follow = false; });
   picker.addEventListener('change', async () => {
     const file = picker.files[0];
     if (!file) return;
@@ -239,7 +269,7 @@ export function initVideoUpload({stopCamera, message, getTask, selectTask}) {
     clear();
     stopCamera();
     const job = {basename: file.name.replace(/\.[^.]+$/, '') || 'LoopDVR', source: URL.createObjectURL(file), video: document.createElement('video'),
-      controller: new AbortController(), threshold: Number(byId('threshold').value), size: byId('model-size').value, results: new Map(), follow: true};
+      controller: new AbortController(), threshold: Number(byId('threshold').value), size: byId('model-size').value, results: new Map(), stats: new Map()};
     current = job;
     selectTask('det');
     for (const choice of choices) choice.disabled = choice.value !== 'det';
@@ -247,27 +277,47 @@ export function initVideoUpload({stopCamera, message, getTask, selectTask}) {
     clearButton.hidden = progress.hidden = false;
     clearButton.textContent = 'Cancel processing';
     progress.value = 0;
-    message('Opening video and loading LoopDet-S…', 'loading');
+    progress.max = 1;
+    function waiting(text) {
+      job.waitMessage = text;
+      stageLabel.classList.add('waiting');
+      stageLabel.textContent = `${tasks.indexOf(job.task) + 1}/${tasks.length} · ${text}`;
+      if (getTask() === job.task) showTask();
+    }
+    job.task = 'det';
+    waiting('Opening video…');
     try {
       await processVideo(job, {
         stage(index, task) {
-          stageLabel.textContent = `${index + 1}/3 · Loading ${taskNames[task]}…`;
+          for (const choice of choices) if (choice.value === task) choice.disabled = false;
+          selectTask(task);
+          waiting(index === 0 ? 'Loading the detection model…' : `Waiting for the ${taskNames[task].toLowerCase()} model download…`);
         },
-        frame(task, first) {
+        initializing(task) { waiting(`Preparing the ${taskNames[task].toLowerCase()} model…`); },
+        ready(task) {
+          selectTask(task);
+          waiting(`Preparing the first ${taskNames[task].toLowerCase()} frame…`);
+        },
+        frame(task, first, stats) {
+          job.stats.set(task, stats);
           if (first) {
-            for (const choice of choices) if (choice.value === task) choice.disabled = false;
-            if (job.follow) selectTask(task);
-            stageLabel.textContent = `${tasks.indexOf(task) + 1}/3 · ${taskNames[task]}`;
+            selectTask(task);
+            stageLabel.classList.remove('waiting');
+            stageLabel.textContent = `${tasks.indexOf(task) + 1}/${tasks.length} · Processing ${taskNames[task].toLowerCase()}`;
           }
           if (getTask() === task) showTask();
         },
-        result(task) { if (getTask() === task) showTask(); }
+        result(task, stats) {
+          job.stats.set(task, stats);
+          if (getTask() === task) showTask();
+        }
       });
       job.controller.signal.throwIfAborted();
       stageLabel.textContent = '';
     } catch (error) {
       if (current !== job) return;
       job.controller.abort(error);
+      stageLabel.classList.remove('waiting');
       if (!job.results.size) {
         clear();
         message(error.message || 'Video processing failed.', 'error');
@@ -289,9 +339,5 @@ export function initVideoUpload({stopCamera, message, getTask, selectTask}) {
     }
   });
   clearButton.onclick = () => { clear(); message(); };
-  return {clear, onTaskChange() {
-    if (!current) return;
-    current.follow = getTask() === current.task;
-    showTask();
-  }};
+  return {clear, onTaskChange: showTask};
 }

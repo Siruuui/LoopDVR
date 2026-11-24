@@ -67,14 +67,15 @@ sup { font-size: .62em; line-height: 0; }
   justify-content: space-between;
   gap: 12px;
   margin: 16px 0 20px;
-  padding: 12px clamp(12px, 2vw, 18px);
+  min-height: 60px;
+  padding-inline: clamp(12px, 2vw, 18px);
   border-inline-start: 3px solid var(--blue);
   background: #f2f1fb;
   color: var(--blue-dark);
 }
-.demo-entry strong { font-size: clamp(16px, 2vw, 24px); font-weight: 650; line-height: 1.25; letter-spacing: -.025em; text-align: start; }
+.demo-entry strong { padding-block: 15px; font-size: clamp(17px, 2.15vw, 26px); font-weight: 650; line-height: 1.25; letter-spacing: -.025em; text-align: start; }
 .demo-entry:hover { background: #eae8fa; text-decoration: none; }
-.demo-action { flex-shrink: 0; white-space: nowrap; }
+.demo-action { min-height: 40px; padding: 6px 13px; gap: 7px; font-size: 16px; flex-shrink: 0; white-space: nowrap; }
 .demo-entry:is(:hover, :focus-visible) .demo-action { background: var(--blue-dark); }
 .resource svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 main, footer { width: min(var(--content-width), calc(100% - 52px)); margin-inline: auto; }
@@ -120,7 +121,8 @@ main, footer { width: min(var(--content-width), calc(100% - 52px)); margin-inlin
 .qualitative-player { margin-bottom: 20px; }
 .qualitative-player video { width: 100%; }
 .case-card { flex: 0 0 200px; scroll-snap-align: start; min-width: 0; background: #fff; border: 0; padding: 0; text-align: left; cursor: zoom-in; }
-.case-card img { width: 100%; aspect-ratio: 3/2; object-fit: contain; }
+.case-card canvas, #viewer-case canvas { display: block; width: 100%; height: auto; }
+#viewer-case { min-width: 0; width: min(1200px, calc(95vw - 165px), calc((94dvh - 210px) * 1.5)); }
 .case-caption { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; }
 .stage-narrative { margin: 22px 0 0; }
 .stage-copy { flex: 1; min-width: 0; }
@@ -170,6 +172,7 @@ body:has(#qualitative-viewer[open]) { overflow: hidden; }
 dialog .task-tabs { margin: 12px 0 16px; }
 .viewer-stage { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 14px; }
 .viewer-stage img { width: auto; min-width: 0; max-width: calc(95vw - 165px); max-height: calc(94dvh - 210px); object-fit: contain; }
+.viewer-stage img[src$=".svg"] { width: min(1100px, calc((94dvh - 210px) * 1.405)); }
 dialog .figure-note { text-align: center; margin: 13px 0 0; }
 .method-media { display: grid; aspect-ratio: 16/9; align-items: center; }
 .method-media:has(#method-overview:not([hidden])) { aspect-ratio: auto; }
@@ -205,6 +208,7 @@ dialog .figure-note { text-align: center; margin: 13px 0 0; }
   .authors-reserved { height: 21px; }
   .resource-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 320px; margin-inline: auto; }
   .resource { padding: 9px 12px; font-size: 12px; gap: 7px; min-height: 42px; }
+  .demo-action { min-height: 37px; padding: 5px 9px; gap: 5px; font-size: 13px; }
   .resource svg { width: 16px; height: 16px; }
   .masthead, main, footer { width: calc(100% - 32px); }
   .abstract-section { padding: 30px 0 32px; }
@@ -236,6 +240,7 @@ dialog .figure-note { text-align: center; margin: 13px 0 0; }
   .viewer-header { gap: 15px; }
   .viewer-stage { gap: 6px; }
   .viewer-stage .round-button { width: 27px; height: 27px; padding: 4px; }
+  #viewer-case { width: min(calc(96vw - 91px), calc((94dvh - 210px) * 1.5)); }
   .viewer-stage img { max-width: calc(96vw - 91px); }
 }
 @media (prefers-reduced-motion: reduce) { :root { scroll-behavior: auto; } }

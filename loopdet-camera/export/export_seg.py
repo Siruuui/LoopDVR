@@ -1,4 +1,4 @@
-"""Export the 512- and 640-pixel LoopSeg-S webcam profiles with the complete four-step decoder."""
+"""Export the 512-, 640- and 704-pixel LoopSeg-S webcam profiles with the complete four-step decoder."""
 
 import argparse
 from pathlib import Path
@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 
 
 # The encoder proposal top-k and the final top-k over query/class scores share this count.
-QUERIES_BY_SIZE = {512: 100, 640: 300}
+QUERIES_BY_SIZE = {512: 100, 640: 300, 704: 300}
 
 
 def prepare(repo, weights, size):
@@ -148,7 +148,7 @@ def main():
     parser.add_argument('--repo', type=Path, required=True, help='LoopDVR release checkout')
     parser.add_argument('--weights', type=Path, required=True, help='Released loopseg-s.pth checkpoint')
     parser.add_argument('--output', type=Path, required=True, help='Directory for the ONNX files')
-    parser.add_argument('--size', choices=tuple(QUERIES_BY_SIZE), type=int, help='Export one resolution (default: both)')
+    parser.add_argument('--size', choices=tuple(QUERIES_BY_SIZE), type=int, help='Export one resolution (default: all)')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     for size in ((args.size,) if args.size else QUERIES_BY_SIZE):
