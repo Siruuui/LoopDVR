@@ -4,7 +4,7 @@
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const clamp = value => Math.max(0, Math.min(1, value));
 
-  function createPlayer({ video, observedElement, status, control, controlLabel, initialTime, render, reveal, complete, label, canPlay, autoplayDelay = 400 }) {
+  function createPlayer({ video, observedElement, status, control, controlLabel, initialTime, render, reveal, complete, label, canPlay, blockedControl, autoplayDelay = 400 }) {
     let visible = false;
     let desired = false;
     let readyToAutoplay = false;
@@ -61,22 +61,23 @@
     }
 
     async function play() {
-      if (!desired || document.hidden || (canPlay && !canPlay()) || video.readyState < HTMLMediaElement.HAVE_METADATA) return;
+      if (!desired || document.hidden || (canPlay && !canPlay())) return;
       const currentRevision = revision;
       try {
         await video.play();
       } catch (error) {
         if (revision !== currentRevision || error.name === 'AbortError') return;
         desired = false;
+        if (error.name === 'NotAllowedError' && blockedControl) blockedControl.hidden = false;
         if (error.name !== 'NotAllowedError') status.textContent = `The ${label} video could not be played. Press Play to try again.`;
         update();
       }
     }
 
     function applySeek() {
-      if (video.readyState < HTMLMediaElement.HAVE_METADATA) return;
-      if (pendingSeek !== null) {
-        video.currentTime = Math.min(pendingSeek, video.duration);
+      if (video.readyState >= HTMLMediaElement.HAVE_METADATA && pendingSeek !== null) {
+        const target = Math.min(pendingSeek, video.duration);
+        if (video.currentTime !== target) video.currentTime = target;
         pendingSeek = null;
       }
       update();
@@ -138,10 +139,14 @@
         request(pendingSeek === null ? video.currentTime : pendingSeek, null);
       }
     });
+    blockedControl?.addEventListener('click', () => request(pendingSeek ?? video.currentTime, null));
     video.muted = true;
     video.addEventListener('loadedmetadata', applySeek);
     video.addEventListener('timeupdate', update);
     video.addEventListener('seeked', update);
+    video.addEventListener('playing', () => {
+      if (blockedControl) blockedControl.hidden = true;
+    });
     video.addEventListener('play', () => {
       syncControl();
       if (render && frameId === null) frameId = requestAnimationFrame(tick);
@@ -218,6 +223,7 @@
 
   const qualitativeVideo = document.querySelector('#qualitative-video');
   const qualitativeOpen = document.querySelector('#qualitative-open');
+  const qualitativePlay = document.querySelector('#qualitative-play');
   const qualitativeFrame = qualitativeOpen.closest('.qualitative-frame');
   const qualitativeViewer = document.querySelector('#qualitative-viewer');
   const enlargedVideo = document.querySelector('#qualitative-enlarged');
@@ -236,10 +242,11 @@
     video: qualitativeVideo,
     observedElement: qualitativeVideo,
     status: inlineStatus,
+    blockedControl: qualitativePlay,
     initialTime: 0,
     label: 'qualitative results',
     autoplayDelay: 0,
-    canPlay: () => loadedLayer && !previewHovered && !qualitativeViewer.open
+    canPlay: () => loadedLayer && (!previewHovered || !qualitativePlay.hidden) && !qualitativeViewer.open
   });
   document.querySelector('#case-panel').addEventListener('qualitative-taskchange', async event => {
     const {suffix, name} = event.detail;
@@ -266,6 +273,7 @@
 
   qualitativeFrame.addEventListener('pointerenter', event => {
     if (event.pointerType !== 'mouse') return;
+    if (!qualitativePlay.hidden) return;
     previewHovered = true;
     qualitativePlayer.suspend();
   });
