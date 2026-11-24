@@ -29,6 +29,7 @@ select { font: inherit; color: var(--ink); background: white; padding: 3px 6px; 
 .task-picker label:has(input:checked) { color: var(--blue); border-color: var(--blue); background: var(--soft); }
 .task-picker label:has(input:focus-visible) { outline: 2px solid var(--blue); outline-offset: -2px; }
 .task-picker label:hover { background: var(--soft); }
+.task-picker label:has(input:disabled) { opacity: .6; cursor: default; background: none; }
 #idle p, .video-actions { color: var(--muted); font-size: 14px; }
 .demo-view { position: relative; display: grid; place-items: center; overflow: hidden; aspect-ratio: 16 / 9; background: var(--soft); border: 1px solid var(--line); border-radius: 5px; }
 .screen, .screen canvas, #clip-result { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
@@ -36,6 +37,7 @@ select { font: inherit; color: var(--ink); background: white; padding: 3px 6px; 
 #idle h2 { font-size: clamp(19px, 3vw, 25px); margin: 0 0 4px; }
 #idle p { margin: 0; }
 .video-actions { display: flex; margin-top: 2px; justify-content: flex-end; align-items: baseline; gap: 16px; }
+#video-stage { margin-right: auto; }
 #download-video { min-height: 32px; padding: 4px 12px; font-size: 14px; }
 #clear-video { min-width: 9em; text-align: right; border: 0; background: none; color: var(--blue); padding: 4px 0; font-size: inherit; }
 #status { overflow-wrap: anywhere; }

@@ -1,4 +1,4 @@
-import {initVideoUpload} from './video-upload.js';
+import {initVideoUpload} from './video-upload.js?v=video2';
 import {drawPredictions} from './annotations.js';
 
 const el = id => document.getElementById(id);
@@ -142,15 +142,21 @@ async function start() {
 slider.oninput = () => {
   el('level').textContent = Number(slider.value).toFixed(2);
 };
-const upload = initVideoUpload({stopCamera: stop, message, getTask: () => selectedTask().value});
+function updateTaskTitle() {
+  el('task-title').textContent = selectedTask().closest('label').querySelector('.task-name').textContent;
+}
+const upload = initVideoUpload({stopCamera: stop, message, getTask: () => selectedTask().value, selectTask(value) {
+  task.querySelector(`input[value="${value}"]`).checked = true;
+  updateTaskTitle();
+}});
 function stopLiveOnChange() {
   if (active) stop();
 }
 modelSize.addEventListener('change', stopLiveOnChange);
 task.addEventListener('change', () => {
   stopLiveOnChange();
-  el('task-title').textContent = selectedTask().closest('label').querySelector('.task-name').textContent;
-  upload.showTask();
+  updateTaskTitle();
+  upload.onTaskChange();
 });
 button.onclick = () => active ? stop() : start();
 window.addEventListener('pagehide', () => { upload.clear(); stop(); });

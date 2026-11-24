@@ -1,5 +1,6 @@
 import * as ort from './runtime/ort.webgpu.min.mjs';
 import {createMaskRenderer} from './overlays.js';
+import {modelURL} from './model-url.js';
 
 const params = new URL(import.meta.url).searchParams;
 const size = Number(params.get('size') ?? 512);
@@ -18,17 +19,27 @@ const input = new ort.Tensor('float32', pixels, [1, 3, size, size]);
 let session;
 let maskRenderer;
 
-async function load() {
+async function load({modelBytes, precision: prefetchedPrecision}) {
   const adapter = await navigator.gpu?.requestAdapter();
   if (!adapter) {
     throw new Error('WebGPU is unavailable. Use desktop Chrome or Edge with graphics acceleration enabled.');
   }
   ort.env.wasm.numThreads = 1;
   ort.env.wasm.wasmPaths = new URL('./runtime/', import.meta.url).href;
-  const precision = adapter.features.has('shader-f16') ? 'fp16' : 'fp32';
-  const model = new URL(`./loop${task}-s-${size}-${precision}.onnx`, import.meta.url);
-  if (task === 'det') model.searchParams.set('v', 'd4');
-  session = await ort.InferenceSession.create(model.href, {
+  const supportsFP16 = adapter.features.has('shader-f16');
+  let precision = supportsFP16 ? 'fp16' : 'fp32';
+  let model;
+  if (modelBytes !== undefined) {
+    if (!(modelBytes instanceof ArrayBuffer) || !modelBytes.byteLength || !['fp16', 'fp32'].includes(prefetchedPrecision)) {
+      throw new Error('Invalid prefetched model.');
+    }
+    if (prefetchedPrecision === 'fp16' && !supportsFP16) throw new Error('This GPU does not support the prefetched FP16 model.');
+    precision = prefetchedPrecision;
+    model = new Uint8Array(modelBytes);
+  } else {
+    model = modelURL(task, size, precision).href;
+  }
+  session = await ort.InferenceSession.create(model, {
     executionProviders: ['webgpu', 'wasm'],
     graphOptimizationLevel: 'all',
     ...(task === 'seg' ? {preferredOutputLocation: {masks: 'gpu-buffer'}} : {}),
@@ -71,7 +82,7 @@ async function infer(videoFrame, threshold) {
 
 self.onmessage = async ({data}) => {
   try {
-    if (data.type === 'load') await load();
+    if (data.type === 'load') await load(data);
     if (data.type === 'frame') await infer(data.frame, data.threshold);
   } catch (error) {
     data.frame?.close();

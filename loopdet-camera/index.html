@@ -7,7 +7,7 @@
   <title>Browser demo · LoopDVR</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../css/styles.css">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=video2">
 </head>
 <body>
   <header class="top-nav"><nav class="nav-inner" aria-label="Main navigation">
@@ -37,7 +37,7 @@
       <section class="demo-view" aria-label="Prediction viewer">
         <div class="screen" id="screen" hidden><canvas id="frame"></canvas><canvas id="overlay"></canvas></div>
         <video id="clip-result" controls playsinline hidden aria-label="Processed video"></video>
-        <div id="idle"><h2 id="task-title">Object detection</h2><p id="status" role="status">Click Live to try with your webcam, or choose a video to run all three tasks.</p></div>
+        <div id="idle"><h2 id="task-title">Object detection</h2><p id="status" role="status">Click Live to try with your webcam, or choose a video to run detection, segmentation, then pose.</p></div>
       </section>
       <dl id="metrics">
         <div><dt>Frame rate</dt><dd><span id="fps">—</span> FPS</dd></div>
@@ -47,6 +47,7 @@
       </dl>
     </div>
     <div class="video-actions">
+      <span id="video-stage" role="status"></span>
       <button id="clear-video" type="button" hidden>Cancel processing</button>
       <a id="download-video" class="resource" download hidden>Download</a>
     </div>
@@ -56,6 +57,6 @@
       <p>Frame rate and processing time depend on your device.</p>
     </div>
   </main>
-  <script type="module" src="camera.js"></script>
+  <script type="module" src="camera.js?v=video2"></script>
 </body>
 </html>
