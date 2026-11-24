@@ -74,8 +74,8 @@ sup { font-size: .62em; line-height: 0; }
 }
 .demo-entry strong { font-size: clamp(16px, 2vw, 24px); font-weight: 650; line-height: 1.25; letter-spacing: -.025em; text-align: start; }
 .demo-entry:hover { background: #eae8fa; text-decoration: none; }
-.demo-action { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; padding: 4px 9px; border: 1px solid #bcb6e6; border-radius: 5px; background: white; color: var(--blue); font-size: 13px; line-height: 1.4; font-weight: 600; }
-.demo-entry:is(:hover, :focus-visible) .demo-action { border-color: var(--blue); }
+.demo-action { flex-shrink: 0; white-space: nowrap; }
+.demo-entry:is(:hover, :focus-visible) .demo-action { background: var(--blue-dark); }
 .resource svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 main, footer { width: min(var(--content-width), calc(100% - 52px)); margin-inline: auto; }
 .abstract-section { border-top: 1px solid var(--line); padding: 42px 0 24px; }

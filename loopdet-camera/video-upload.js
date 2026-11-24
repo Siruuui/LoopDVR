@@ -247,7 +247,7 @@ export function initVideoUpload({stopCamera, message, getTask, selectTask}) {
     clearButton.hidden = progress.hidden = false;
     clearButton.textContent = 'Cancel processing';
     progress.value = 0;
-    message('Opening video and loading LoopDet-S…');
+    message('Opening video and loading LoopDet-S…', 'loading');
     try {
       await processVideo(job, {
         stage(index, task) {
@@ -270,7 +270,7 @@ export function initVideoUpload({stopCamera, message, getTask, selectTask}) {
       job.controller.abort(error);
       if (!job.results.size) {
         clear();
-        message(error.message || 'Video processing failed.', true);
+        message(error.message || 'Video processing failed.', 'error');
         return;
       }
       stageLabel.textContent = `${taskNames[job.task]} failed. ${error.message || 'Video processing failed.'}`;

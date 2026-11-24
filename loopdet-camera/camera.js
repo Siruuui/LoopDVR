@@ -1,4 +1,4 @@
-import {initVideoUpload} from './video-upload.js?v=video2';
+import {initVideoUpload} from './video-upload.js?v=ui3';
 import {drawPredictions} from './annotations.js';
 
 const el = id => document.getElementById(id);
@@ -16,9 +16,10 @@ const idlePrompt = el('status').textContent;
 let active = null;
 let classes = [];
 
-function message(text = idlePrompt, error = false) {
+function message(text = idlePrompt, state = 'idle') {
   el('status').textContent = text;
-  el('status').classList.toggle('error', error);
+  el('status').classList.toggle('error', state === 'error');
+  el('idle').classList.toggle('loading', state === 'loading');
 }
 
 function stop(text = idlePrompt, error = false) {
@@ -38,7 +39,7 @@ function stop(text = idlePrompt, error = false) {
   el('idle').hidden = false;
   for (const id of ['fps','latency','count']) el(id).textContent = '—';
   button.textContent = 'Live';
-  message(text, error);
+  message(text, error ? 'error' : 'idle');
 }
 
 async function nextFrame(run) {
@@ -62,7 +63,7 @@ function receive(run, data) {
   if (data.type === 'error') { stop('Inference failed. ' + data.message, true); return; }
   if (data.type === 'ready') {
     el('precision').textContent = ' · ' + data.precision.toUpperCase();
-    message('Preparing the first prediction…');
+    message('Preparing the first prediction…', 'loading');
     nextFrame(run);
     return;
   }
@@ -118,7 +119,7 @@ async function start() {
     if (!track) throw new Error('The camera did not provide a video track.');
     track.onended = () => { if (active === run) stop(); };
     run.reader = new MediaStreamTrackProcessor({track, maxBufferSize: 1}).readable.getReader();
-    message('Loading ' + modelNames[run.task] + ' and the WebGPU runtime…');
+    message('Loading ' + modelNames[run.task] + ' and the WebGPU runtime…', 'loading');
     if (!classes.length) {
       const response = await fetch('./classes.json');
       if (!response.ok) throw new Error('Could not load the class labels.');

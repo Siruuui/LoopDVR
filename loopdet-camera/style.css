@@ -36,6 +36,21 @@ select { font: inherit; color: var(--ink); background: white; padding: 3px 6px; 
 #idle { text-align: center; padding: 12px; }
 #idle h2 { font-size: clamp(19px, 3vw, 25px); margin: 0 0 4px; }
 #idle p { margin: 0; }
+#idle.loading::after {
+  content: '';
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: 14px auto 0;
+  border: 2px solid var(--line);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: model-loading .8s linear infinite;
+}
+@keyframes model-loading { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  #idle.loading::after { animation: none; }
+}
 .video-actions { display: flex; margin-top: 2px; justify-content: flex-end; align-items: baseline; gap: 16px; }
 #video-stage { margin-right: auto; }
 #download-video { min-height: 32px; padding: 4px 12px; font-size: 14px; }
