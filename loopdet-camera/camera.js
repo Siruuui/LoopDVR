@@ -26,9 +26,10 @@ function stop(text = idlePrompt, error = false) {
   const run = active;
   active = null;
   clearInterval(run?.fpsTimer);
-  if (run?.reader) {
-    const reader = run.reader;
-    reader.cancel().catch(() => {}).finally(() => reader.releaseLock());
+  if (run?.video) {
+    if (run.frameCallback != null) run.video.cancelVideoFrameCallback(run.frameCallback);
+    run.video.pause();
+    run.video.srcObject = null;
   }
   run?.worker?.terminate();
   run?.stream?.getTracks().forEach(track => track.stop());
@@ -42,20 +43,22 @@ function stop(text = idlePrompt, error = false) {
   message(text, error ? 'error' : 'idle');
 }
 
-async function nextFrame(run) {
-  try {
-    const {done, value: frame} = await run.reader.read();
-    if (active !== run) { frame?.close(); return; }
-    if (done) { stop(); return; }
+function captureFrames(run) {
+  const capture = () => {
+    if (active !== run) return;
+    run.frameCallback = run.video.requestVideoFrameCallback(capture);
+    if (run.busy) return;
+    let videoFrame;
     try {
-      run.worker.postMessage({type: 'frame', frame, threshold: Number(slider.value)}, [frame]);
+      videoFrame = new VideoFrame(run.video);
+      run.worker.postMessage({type: 'frame', frame: videoFrame, threshold: Number(slider.value)}, [videoFrame]);
+      run.busy = true;
     } catch (error) {
-      frame.close();
-      throw error;
+      videoFrame?.close();
+      stop('Could not read the camera frame. ' + error.message, true);
     }
-  } catch (error) {
-    if (active === run) stop('Could not read the camera frame. ' + error.message, true);
-  }
+  };
+  run.frameCallback = run.video.requestVideoFrameCallback(capture);
 }
 
 function receive(run, data) {
@@ -64,11 +67,11 @@ function receive(run, data) {
   if (data.type === 'ready') {
     el('precision').textContent = ' · ' + data.precision.toUpperCase();
     message('Preparing the first prediction…', 'loading');
-    nextFrame(run);
+    captureFrames(run);
     return;
   }
   if (data.type !== 'frame') return;
-  nextFrame(run);
+  run.busy = false;
   const videoFrame = data.frame;
   if (frame.width !== videoFrame.displayWidth || frame.height !== videoFrame.displayHeight) {
     frame.width = overlay.width = videoFrame.displayWidth;
@@ -110,7 +113,8 @@ async function start() {
   button.textContent = 'Stop live';
   try {
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) throw new Error('Open this demo over HTTPS or localhost.');
-    if (!navigator.gpu || !window.VideoFrame || !window.MediaStreamTrackProcessor) throw new Error('Use desktop Chrome or Edge with WebGPU enabled.');
+    if (!navigator.gpu) throw new Error('This browser does not provide WebGPU. On iPhone, use Safari on iOS 26 or later.');
+    if (!window.VideoFrame || !HTMLVideoElement.prototype.requestVideoFrameCallback) throw new Error('This browser cannot read live video frames. Update your browser to use Live.');
     message('Waiting for camera permission…');
     const stream = await navigator.mediaDevices.getUserMedia({audio: false, video: {width: {ideal: 960}, height: {ideal: 540}}});
     if (active !== run) { stream.getTracks().forEach(track => track.stop()); return; }
@@ -118,7 +122,12 @@ async function start() {
     const track = stream.getVideoTracks()[0];
     if (!track) throw new Error('The camera did not provide a video track.');
     track.onended = () => { if (active === run) stop(); };
-    run.reader = new MediaStreamTrackProcessor({track, maxBufferSize: 1}).readable.getReader();
+    run.video = document.createElement('video');
+    run.video.muted = true;
+    run.video.playsInline = true;
+    run.video.srcObject = stream;
+    await run.video.play();
+    if (active !== run) return;
     message('Loading ' + modelNames[run.task] + ' and the WebGPU runtime…', 'loading');
     if (!classes.length) {
       const response = await fetch('./classes.json');
