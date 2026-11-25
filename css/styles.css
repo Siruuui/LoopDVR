@@ -57,7 +57,7 @@ sup { font-size: .62em; line-height: 0; }
 .affiliations sup { margin-right: 3px; }
 .corresponding-author { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
 .authors-reserved { height: 23px; }
-.resource-links { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.resource-links { display: grid; grid-template-columns: repeat(4, minmax(0, 132px)); justify-content: center; gap: 12px; }
 .resource { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 9px 18px; border: 1px solid var(--blue); border-radius: 5px; background: var(--blue); color: #fff; font-size: 15px; font-weight: 600; line-height: 1.3; }
 .resource[aria-disabled="true"] { cursor: default; }
 .resource:hover { background: var(--blue-dark); text-decoration: none; }
@@ -213,7 +213,7 @@ dialog .figure-note { text-align: center; margin: 13px 0 0; }
   .authors { gap: 7px 19px; }
   .affiliations { row-gap: 0; column-gap: 20px; margin-top: 13px; }
   .authors-reserved { height: 21px; }
-  .resource-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 320px; margin-inline: auto; }
+  .resource-links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 320px; margin-inline: auto; }
   .resource { padding: 9px 12px; font-size: 12px; gap: 7px; min-height: 42px; }
   .demo-action { min-height: 37px; padding: 5px 9px; gap: 5px; font-size: 13px; }
   .resource svg { width: 16px; height: 16px; }
