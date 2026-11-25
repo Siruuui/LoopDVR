@@ -7,7 +7,7 @@
   <title>Browser demo · LoopDVR</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../css/styles.css">
-  <link rel="stylesheet" href="style.css?v=video4">
+  <link rel="stylesheet" href="style.css?v=camera3">
 </head>
 <body>
   <header class="top-nav"><nav class="nav-inner" aria-label="Main navigation">
@@ -34,10 +34,11 @@
         <label><input class="sr-only" type="radio" name="task" value="seg"><span class="task-name">Instance segmentation</span><small>LoopSeg-S</small></label>
         <label><input class="sr-only" type="radio" name="task" value="pose"><span class="task-name">Human pose estimation</span><small>LoopPose-S</small></label>
       </fieldset>
-      <section class="demo-view" aria-label="Prediction viewer">
+      <section id="viewer" class="demo-view" aria-label="Prediction viewer">
         <div class="screen" id="screen" hidden><canvas id="frame"></canvas><canvas id="overlay"></canvas></div>
+        <button class="file-action" id="flip-camera" type="button" hidden>Flip camera</button>
         <video id="clip-result" controls playsinline hidden aria-label="Processed video"></video>
-        <div id="idle"><h2 id="task-title">Object detection</h2><p id="status" role="status">Click Live to try with your webcam, or choose a video to run detection, segmentation, then pose.</p></div>
+        <div id="idle"><h2 id="task-title">Object detection</h2><p id="status" role="status">Select Live to use your camera, or choose a video to run all three tasks.</p></div>
       </section>
       <dl id="metrics">
         <div><dt id="rate-label">Frame rate</dt><dd><span id="fps">—</span> FPS</dd></div>
@@ -57,6 +58,6 @@
       <p>Frame rate and processing time depend on your device.</p>
     </div>
   </main>
-  <script type="module" src="camera.js?v=live2"></script>
+  <script type="module" src="camera.js?v=camera3"></script>
 </body>
 </html>

@@ -32,6 +32,9 @@ select { font: inherit; color: var(--ink); background: white; padding: 3px 6px; 
 .task-picker label:has(input:disabled) { opacity: .6; cursor: default; background: none; }
 #idle p, .video-actions { color: var(--muted); font-size: 14px; }
 .demo-view { position: relative; display: grid; place-items: center; overflow: hidden; aspect-ratio: 16 / 9; background: var(--soft); border: 1px solid var(--line); border-radius: 5px; }
+.demo-workspace:has(.camera-view) { max-height: none; }
+.demo-workspace > .camera-view { flex-shrink: 0; min-height: 0; align-self: center; width: min(100%, calc(72dvh * var(--camera-ratio))); aspect-ratio: var(--camera-ratio); }
+#flip-camera { position: absolute; top: 8px; right: 8px; z-index: 1; min-height: 44px; background: white; }
 .screen, .screen canvas, #clip-result { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 #idle { text-align: center; padding: 12px; }
 #idle h2 { font-size: clamp(19px, 3vw, 25px); margin: 0 0 4px; }

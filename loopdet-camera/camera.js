@@ -7,6 +7,8 @@ const overlay = el('overlay');
 const frameCtx = frame.getContext('2d', {alpha: false});
 const ink = overlay.getContext('2d');
 const button = el('toggle');
+const flip = el('flip-camera');
+const viewer = el('viewer');
 const slider = el('threshold');
 const modelSize = el('model-size');
 const task = el('task');
@@ -22,17 +24,26 @@ function message(text = idlePrompt, state = 'idle') {
   el('idle').classList.toggle('loading', state === 'loading');
 }
 
+function releaseCamera(run) {
+  if (run.video) {
+    if (run.frameCallback != null) run.video.cancelVideoFrameCallback(run.frameCallback);
+    run.video.pause();
+    run.video.srcObject = null;
+    run.video = null;
+  }
+  run.stream?.getTracks().forEach(track => track.stop());
+  run.stream = null;
+}
+
 function stop(text = idlePrompt, error = false) {
   const run = active;
   active = null;
   clearInterval(run?.fpsTimer);
-  if (run?.video) {
-    if (run.frameCallback != null) run.video.cancelVideoFrameCallback(run.frameCallback);
-    run.video.pause();
-    run.video.srcObject = null;
-  }
+  if (run) releaseCamera(run);
   run?.worker?.terminate();
-  run?.stream?.getTracks().forEach(track => track.stop());
+  flip.hidden = true;
+  viewer.classList.remove('camera-view');
+  viewer.style.removeProperty('--camera-ratio');
   el('precision').textContent = '';
   frameCtx.clearRect(0, 0, frame.width, frame.height);
   ink.clearRect(0, 0, overlay.width, overlay.height);
@@ -43,16 +54,22 @@ function stop(text = idlePrompt, error = false) {
   message(text, error ? 'error' : 'idle');
 }
 
+function sizeViewer(width, height) {
+  if (!width || !height) return;
+  viewer.style.setProperty('--camera-ratio', width / height);
+  viewer.classList.add('camera-view');
+}
+
 function captureFrames(run) {
   const capture = () => {
     if (active !== run) return;
     run.frameCallback = run.video.requestVideoFrameCallback(capture);
-    if (run.busy) return;
+    if (run.pendingVideo) return;
     let videoFrame;
     try {
       videoFrame = new VideoFrame(run.video);
       run.worker.postMessage({type: 'frame', frame: videoFrame, threshold: Number(slider.value)}, [videoFrame]);
-      run.busy = true;
+      run.pendingVideo = run.video;
     } catch (error) {
       videoFrame?.close();
       stop('Could not read the camera frame. ' + error.message, true);
@@ -71,9 +88,16 @@ function receive(run, data) {
     return;
   }
   if (data.type !== 'frame') return;
-  run.busy = false;
+  const source = run.pendingVideo;
+  run.pendingVideo = null;
+  if (source !== run.video) {
+    data.frame.close();
+    data.maskOverlay?.close();
+    return;
+  }
   const videoFrame = data.frame;
   if (frame.width !== videoFrame.displayWidth || frame.height !== videoFrame.displayHeight) {
+    sizeViewer(videoFrame.displayWidth, videoFrame.displayHeight);
     frame.width = overlay.width = videoFrame.displayWidth;
     frame.height = overlay.height = videoFrame.displayHeight;
   }
@@ -89,6 +113,7 @@ function receive(run, data) {
     videoFrame.close();
     data.maskOverlay?.close();
   }
+  flip.hidden = !run.canFlip;
   el('screen').hidden = false;
   el('idle').hidden = true;
   el('latency').textContent = Math.round(data.ms);
@@ -106,6 +131,48 @@ function receive(run, data) {
   }
 }
 
+async function openCamera(run, facingMode) {
+  const constraints = {width: {ideal: 960}, height: {ideal: 540}};
+  if (facingMode) constraints.facingMode = {exact: facingMode};
+  const stream = await navigator.mediaDevices.getUserMedia({audio: false, video: constraints});
+  if (active !== run) { stream.getTracks().forEach(track => track.stop()); return; }
+  run.stream = stream;
+  const track = stream.getVideoTracks()[0];
+  if (!track) throw new Error('The camera did not provide a video track.');
+  track.onended = () => { if (active === run && run.stream === stream) stop(); };
+  run.facing = track.getSettings().facingMode;
+  const video = document.createElement('video');
+  run.video = video;
+  video.muted = true;
+  video.playsInline = true;
+  video.srcObject = stream;
+  await video.play();
+  if (active !== run) return;
+  sizeViewer(video.videoWidth, video.videoHeight);
+  run.canFlip = false;
+  if (run.facing === 'user' || run.facing === 'environment') {
+    const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+    run.canFlip = devices.filter(device => device.kind === 'videoinput').length > 1;
+  }
+}
+
+flip.onclick = async () => {
+  const run = active;
+  if (!run?.canFlip || flip.hidden) return;
+  flip.hidden = true;
+  el('screen').hidden = true;
+  el('idle').hidden = false;
+  message('Switching camera…', 'loading');
+  const facing = run.facing === 'user' ? 'environment' : 'user';
+  releaseCamera(run);
+  try {
+    await openCamera(run, facing);
+    if (active === run) captureFrames(run);
+  } catch (error) {
+    if (active === run) stop('Could not switch cameras. ' + error.message, true);
+  }
+};
+
 async function start() {
   upload.clear();
   const run = {task: selectedTask().value, size: modelSize.value};
@@ -116,17 +183,7 @@ async function start() {
     if (!navigator.gpu) throw new Error('This browser does not provide WebGPU. On iPhone, use Safari on iOS 26 or later.');
     if (!window.VideoFrame || !HTMLVideoElement.prototype.requestVideoFrameCallback) throw new Error('This browser cannot read live video frames. Update your browser to use Live.');
     message('Waiting for camera permission…');
-    const stream = await navigator.mediaDevices.getUserMedia({audio: false, video: {width: {ideal: 960}, height: {ideal: 540}}});
-    if (active !== run) { stream.getTracks().forEach(track => track.stop()); return; }
-    run.stream = stream;
-    const track = stream.getVideoTracks()[0];
-    if (!track) throw new Error('The camera did not provide a video track.');
-    track.onended = () => { if (active === run) stop(); };
-    run.video = document.createElement('video');
-    run.video.muted = true;
-    run.video.playsInline = true;
-    run.video.srcObject = stream;
-    await run.video.play();
+    await openCamera(run);
     if (active !== run) return;
     message('Loading ' + modelNames[run.task] + ' and the WebGPU runtime…', 'loading');
     if (!classes.length) {
