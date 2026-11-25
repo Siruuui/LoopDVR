@@ -9,6 +9,7 @@
     let desired = false;
     let readyToAutoplay = false;
     let autoplayTimer = null;
+    let autoplayBlocked = false;
     let automatic = false;
     let autoStarted = false;
     let pendingSeek = initialTime;
@@ -67,6 +68,7 @@
         await video.play();
       } catch (error) {
         if (revision !== currentRevision || error.name === 'AbortError') return;
+        autoplayBlocked = automatic && error.name === 'NotAllowedError';
         desired = false;
         if (error.name === 'NotAllowedError' && blockedControl) blockedControl.hidden = false;
         if (error.name !== 'NotAllowedError') status.textContent = `The ${label} video could not be played. Press Play to try again.`;
@@ -95,6 +97,7 @@
       stopFrames();
       desired = true;
       automatic = isAutomatic;
+      autoplayBlocked = false;
       autoStarted = true;
       finished = false;
       stopTime = end === null ? null : Math.max(start, end - 0.04);
@@ -127,6 +130,14 @@
       }, autoplayDelay);
     }
 
+    function retryVisibleVideo(event) {
+      if (!autoplayBlocked || !visible || document.hidden || reducedMotion.matches ||
+          event.target.closest?.('button, a, dialog') || (canPlay && !canPlay())) return;
+      desired = true;
+      play();
+    }
+    document.addEventListener('touchend', retryVisibleVideo, { passive: true });
+    document.addEventListener('WeixinJSBridgeReady', retryVisibleVideo);
     control?.addEventListener('click', () => {
       if (finished || video.ended) {
         request(0, null);
@@ -145,6 +156,7 @@
     video.addEventListener('timeupdate', update);
     video.addEventListener('seeked', update);
     video.addEventListener('playing', () => {
+      autoplayBlocked = false;
       if (blockedControl) blockedControl.hidden = true;
     });
     video.addEventListener('play', () => {
